@@ -1,0 +1,2536 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>סוכן השוואת מגורים – משגב מול בית קמה</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #1a1d2e;
+    --bg3: #252840;
+    --border: #2e3250;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --cyan: #4fc3f7;
+    --yellow: #ffd54f;
+    --green: #69f0ae;
+    --red: #ff5252;
+    --text: #e8eaf6;
+    --text2: #9fa8da;
+    --dim: #5c6bc0;
+    --radius: 14px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', 'Arial Hebrew', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.3px;
+  }
+  header small { color: var(--text2); font-size: 0.78rem; }
+  #api-key-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all .2s;
+  }
+  #api-key-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── SIDEBAR ── */
+  aside {
+    width: 260px;
+    background: var(--bg2);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 16px;
+    gap: 20px;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .sidebar-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--dim);
+    margin-bottom: 4px;
+  }
+  .legend { display: flex; flex-direction: column; gap: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dot-a { background: var(--cyan); }
+  .dot-b { background: var(--yellow); }
+
+  /* Topic progress */
+  .topics { display: flex; flex-direction: column; gap: 10px; }
+  .topic-item {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    transition: border-color .3s;
+  }
+  .topic-item.done { border-color: var(--accent); }
+  .topic-item.active { border-color: var(--cyan); }
+  .topic-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text2);
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .topic-item.done .topic-name { color: var(--text); }
+  .topic-check { color: var(--green); font-size: 0.9rem; }
+  .mini-bars { display: flex; flex-direction: column; gap: 3px; }
+  .mini-bar-row { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--dim); }
+  .mini-bar-track {
+    flex: 1; height: 5px; background: var(--bg);
+    border-radius: 3px; overflow: hidden;
+  }
+  .mini-bar-fill { height: 100%; border-radius: 3px; transition: width .6s ease; }
+  .fill-a { background: var(--cyan); }
+  .fill-b { background: var(--yellow); }
+  .fill-c { background: var(--green); }
+
+  /* Total score */
+  .total-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .total-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.82rem; }
+  .total-row:last-child { margin-bottom: 0; }
+  .total-score {
+    font-size: 1.1rem;
+    font-weight: 700;
+    width: 52px;
+    flex-shrink: 0;
+  }
+  .total-bar-track {
+    flex: 1; height: 8px; background: var(--bg);
+    border-radius: 4px; overflow: hidden;
+  }
+  .total-bar-fill { height: 100%; border-radius: 4px; transition: width .8s ease; }
+
+  /* ── CHAT AREA ── */
+  #chat-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scroll-behavior: smooth;
+  }
+  #messages::-webkit-scrollbar { width: 6px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .msg {
+    display: flex;
+    gap: 12px;
+    max-width: 82%;
+    animation: fadeIn .25s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: none; } }
+  .msg.agent { align-self: flex-start; }
+  .msg.user  { align-self: flex-end; flex-direction: row-reverse; }
+
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0; margin-top: 2px;
+  }
+  .avatar-agent { background: linear-gradient(135deg, var(--accent), #9c27b0); }
+  .avatar-user  { background: linear-gradient(135deg, #0288d1, #00bcd4); }
+
+  .bubble {
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+  .msg.agent .bubble {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-top-right-radius: 4px;
+    color: var(--text);
+  }
+  .msg.user .bubble {
+    background: var(--accent);
+    border-top-left-radius: 4px;
+    color: #fff;
+  }
+
+  /* typing indicator */
+  .typing .bubble { padding: 14px 18px; }
+  .dots { display: flex; gap: 5px; }
+  .dots span {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--text2);
+    animation: bounce 1.2s infinite;
+  }
+  .dots span:nth-child(2) { animation-delay: .2s; }
+  .dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes bounce {
+    0%,80%,100% { transform: scale(1); opacity:.5; }
+    40%         { transform: scale(1.3); opacity:1; }
+  }
+
+  /* ── OPTIONS (multiple choice) ── */
+  .options-wrap {
+    padding: 0 24px 16px;
+    display: flex; flex-direction: column; gap: 8px;
+    animation: fadeIn .25s ease;
+  }
+  .option-btn {
+    background: var(--bg2);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 18px;
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-align: right;
+    transition: all .2s;
+    font-family: inherit;
+    direction: rtl;
+    line-height: 1.4;
+  }
+  .option-btn:hover {
+    border-color: var(--accent);
+    background: rgba(108,99,255,.12);
+    transform: translateX(-2px);
+  }
+  .option-btn.selected {
+    border-color: var(--accent);
+    background: rgba(108,99,255,.22);
+    color: var(--text);
+  }
+  .option-btn.selected::before {
+    content: '✓ ';
+    color: var(--accent);
+    font-weight: bold;
+  }
+  .option-btn.other {
+    border-style: dashed;
+    color: var(--text2);
+    font-style: italic;
+  }
+  .options-confirm {
+    margin-top: 4px;
+    padding: 12px 18px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity .2s;
+    direction: rtl;
+  }
+  .options-confirm:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  /* ── INPUT BAR ── */
+  #input-bar {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+  #user-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-size: 0.92rem;
+    font-family: inherit;
+    resize: none;
+    min-height: 46px;
+    max-height: 120px;
+    outline: none;
+    transition: border-color .2s;
+    direction: rtl;
+  }
+  #user-input:focus { border-color: var(--accent); }
+  #user-input::placeholder { color: var(--dim); }
+  #send-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    width: 46px; height: 46px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s;
+    flex-shrink: 0;
+  }
+  #send-btn:hover { background: #7c73ff; transform: scale(1.05); }
+  #send-btn:disabled { background: var(--bg3); cursor: not-allowed; transform: none; }
+  #send-btn svg { width: 20px; height: 20px; fill: white; }
+
+  /* ── API KEY MODAL ── */
+  #modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 300;
+    backdrop-filter: blur(4px);
+  }
+  #modal-overlay.hidden { display: none; }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 32px;
+    width: min(440px, 92vw);
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .modal h2 { font-size: 1.2rem; margin-bottom: 8px; color: var(--accent); }
+  .modal p  { color: var(--text2); font-size: 0.85rem; margin-bottom: 20px; line-height: 1.5; }
+  .modal input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: monospace;
+    direction: ltr;
+    text-align: left;
+    outline: none;
+    margin-bottom: 14px;
+    transition: border-color .2s;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal .warn {
+    background: rgba(255,213,79,.08);
+    border: 1px solid rgba(255,213,79,.2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.78rem;
+    color: var(--yellow);
+    margin-bottom: 20px;
+    text-align: right;
+  }
+  .modal-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 28px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: all .2s;
+  }
+  .modal-btn:hover { background: #7c73ff; }
+
+  /* ── REPORT VIEW ── */
+  #report-view {
+    display: none; flex: 1; overflow-y: auto;
+    padding: 28px 20px; animation: fadeIn .4s ease;
+    background: var(--bg);
+  }
+  #report-view.visible { display: block; }
+
+  .rpt { max-width: 720px; margin: 0 auto; direction: rtl; }
+
+  /* Verdict hero */
+  .rpt-verdict {
+    border-radius: 18px; padding: 28px 32px; margin-bottom: 28px;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .rpt-verdict.tie   { background: linear-gradient(135deg,rgba(255,213,79,.15),rgba(108,99,255,.1)); border: 1.5px solid rgba(255,213,79,.4); }
+  .rpt-verdict.win-a { background: linear-gradient(135deg,rgba(79,195,247,.15),rgba(108,99,255,.1)); border: 1.5px solid rgba(79,195,247,.4); }
+  .rpt-verdict.win-b { background: linear-gradient(135deg,rgba(255,213,79,.15),rgba(255,101,132,.08)); border: 1.5px solid rgba(255,213,79,.4); }
+  .rpt-verdict.win-c { background: linear-gradient(135deg,rgba(0,230,118,.15),rgba(108,99,255,.08)); border: 1.5px solid rgba(0,230,118,.4); }
+  .rpt-verdict-emoji { font-size: 2.4rem; margin-bottom: 8px; }
+  .rpt-verdict-title { font-size: 1.35rem; font-weight: 800; margin-bottom: 6px; }
+  .rpt-verdict.tie   .rpt-verdict-title { color: var(--yellow); }
+  .rpt-verdict.win-a .rpt-verdict-title { color: var(--cyan); }
+  .rpt-verdict.win-b .rpt-verdict-title { color: var(--yellow); }
+  .rpt-verdict.win-c .rpt-verdict-title { color: var(--green); }
+  .rpt-verdict-sub  { color: var(--text2); font-size: 0.88rem; }
+
+  /* Section label */
+  .rpt-section-label {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: .08em;
+    color: var(--dim); text-transform: uppercase; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .rpt-section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  /* Total scores */
+  .rpt-totals {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px 24px; margin-bottom: 28px;
+  }
+  .rpt-total-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .rpt-total-row:last-child { margin-bottom: 0; }
+  .rpt-total-name { width: 140px; flex-shrink: 0; font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rpt-total-track { flex: 1; height: 16px; background: var(--bg3); border-radius: 8px; overflow: hidden; }
+  .rpt-total-fill  { height: 100%; border-radius: 8px; transition: width 1.1s cubic-bezier(.4,0,.2,1); width: 0; }
+  .rpt-total-fill.a { background: linear-gradient(90deg,var(--cyan),#5bc8fa); }
+  .rpt-total-fill.b { background: linear-gradient(90deg,var(--yellow),#ffd54f); }
+  .rpt-total-fill.c { background: linear-gradient(90deg,var(--green),#69f0ae); }
+  .rpt-total-val  { width: 48px; font-weight: 800; font-size: 1.05rem; flex-shrink: 0; }
+
+  /* Score grid */
+  .rpt-scores { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+  .rpt-score-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 18px;
+    transition: border-color .2s;
+  }
+  .rpt-score-card:hover { border-color: var(--accent); }
+  .rpt-score-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .rpt-score-name { font-size: 0.9rem; font-weight: 700; }
+  .rpt-score-weight {
+    background: rgba(108,99,255,.15); color: var(--accent);
+    border-radius: 20px; padding: 2px 10px; font-size: 0.72rem; font-weight: 600;
+  }
+  .rpt-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+  .rpt-bar-lbl { width: 22px; font-size: 0.78rem; font-weight: 700; flex-shrink: 0; }
+  .rpt-bar-track { flex: 1; height: 9px; background: var(--bg3); border-radius: 5px; overflow: hidden; }
+  .rpt-bar-fill { height: 100%; border-radius: 5px; transition: width .9s cubic-bezier(.4,0,.2,1); width: 0; }
+  .rpt-bar-fill.a { background: var(--cyan); }
+  .rpt-bar-fill.b { background: var(--yellow); }
+  .rpt-bar-fill.c { background: var(--green); }
+  .rpt-bar-val { width: 36px; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; text-align: left; }
+  .rpt-reason { font-size: 0.77rem; color: var(--dim); margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); line-height: 1.45; }
+
+  /* Option summary cards */
+  .rpt-summaries { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 14px; margin-bottom: 28px; }
+  .rpt-summary-card { background: var(--bg2); border-radius: 14px; padding: 18px; }
+  .rpt-summary-card.s-a { border: 1.5px solid rgba(79,195,247,.4); }
+  .rpt-summary-card.s-b { border: 1.5px solid rgba(255,213,79,.4); }
+  .rpt-summary-card.s-c { border: 1.5px solid rgba(0,230,118,.4); }
+  .rpt-summary-tag { font-size: 0.72rem; font-weight: 700; margin-bottom: 6px; }
+  .s-a .rpt-summary-tag { color: var(--cyan); }
+  .s-b .rpt-summary-tag { color: var(--yellow); }
+  .s-c .rpt-summary-tag { color: var(--green); }
+  .rpt-summary-card p { font-size: 0.83rem; color: var(--text2); line-height: 1.6; margin: 0; }
+
+  /* Info cards */
+  .rpt-info-cards { display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
+  .rpt-info-card { background: var(--bg2); border-radius: 12px; padding: 16px 20px; }
+  .rpt-info-card.tension { border-right: 4px solid var(--accent2); }
+  .rpt-info-card.advice  { border-right: 4px solid var(--accent); }
+  .rpt-info-title { font-size: 0.78rem; font-weight: 700; margin-bottom: 6px; }
+  .tension .rpt-info-title { color: var(--accent2); }
+  .advice  .rpt-info-title { color: var(--accent); }
+  .rpt-info-card p { font-size: 0.87rem; color: var(--text); line-height: 1.65; margin: 0; }
+
+  /* Actions */
+  .rpt-actions { display: flex; gap: 10px; justify-content: center; margin-top: 8px; padding-bottom: 32px; }
+  .rpt-btn-restart {
+    background: var(--bg3); border: 1px solid var(--border); color: var(--text2);
+    padding: 10px 24px; border-radius: 10px; cursor: pointer;
+    font-size: 0.88rem; transition: all .2s; font-family: inherit;
+  }
+  .rpt-btn-restart:hover { border-color: var(--accent); color: var(--accent); }
+  .rpt-btn-chat {
+    background: var(--accent); color: #fff; border: none;
+    padding: 10px 24px; border-radius: 10px; cursor: pointer;
+    font-size: 0.88rem; font-weight: 700; transition: all .2s; font-family: inherit;
+  }
+  .rpt-btn-chat:hover { background: #7c73ff; }
+
+  @keyframes barGrow { from { width: 0 } }
+
+  /* ── WELCOME OVERLAY ── */
+  #welcome-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.75);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; backdrop-filter: blur(6px);
+  }
+  #welcome-overlay.hidden { display: none; }
+  .welcome-box {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 22px; padding: 36px 32px;
+    width: min(520px, 94vw); box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .welcome-box .w-icon { font-size: 3rem; margin-bottom: 12px; }
+  .welcome-box h2 { font-size: 1.3rem; color: var(--accent); margin-bottom: 8px; }
+  .welcome-box p  { color: var(--text2); font-size: 0.85rem; margin-bottom: 26px; line-height: 1.6; }
+  .mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 4px; }
+  .mode-card {
+    background: var(--bg3); border: 2px solid var(--border);
+    border-radius: 16px; padding: 22px 16px; cursor: pointer;
+    transition: all .2s; text-align: center;
+  }
+  .mode-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .mode-card .mc-icon { font-size: 2rem; margin-bottom: 10px; }
+  .mode-card h3 { font-size: 0.92rem; font-weight: 700; margin-bottom: 6px; }
+  .mode-card p  { font-size: 0.76rem; color: var(--text2); line-height: 1.45; }
+
+  /* ── OPTIONS FORM ── */
+  .options-form { text-align: right; }
+  .options-form h3 { font-size: 1rem; margin-bottom: 6px; color: var(--text); }
+  .options-form p  { font-size: 0.82rem; color: var(--text2); margin-bottom: 18px; }
+  .opt-input-wrap { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .opt-input-row { display: flex; align-items: center; gap: 10px; }
+  .opt-label {
+    font-size: 0.78rem; font-weight: 700; min-width: 60px;
+    color: var(--text2);
+  }
+  .opt-input {
+    flex: 1; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; color: var(--text);
+    font-size: 0.88rem; font-family: inherit; direction: rtl;
+    outline: none; transition: border-color .2s;
+  }
+  .opt-input:focus { border-color: var(--accent); }
+  .opt-input::placeholder { color: var(--dim); }
+  .add-option-btn {
+    background: none; border: 1px dashed var(--border); border-radius: 10px;
+    color: var(--dim); padding: 9px; cursor: pointer; width: 100%;
+    font-size: 0.82rem; transition: all .2s; font-family: inherit;
+  }
+  .add-option-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .form-nav { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-back-form {
+    background: none; border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text2); padding: 11px 20px; cursor: pointer;
+    font-size: 0.88rem; transition: all .2s; font-family: inherit;
+  }
+  .btn-back-form:hover { border-color: var(--text2); color: var(--text); }
+  .btn-start {
+    flex: 1; background: var(--accent); color: white; border: none;
+    border-radius: 10px; padding: 12px; font-size: 0.95rem;
+    font-weight: 700; cursor: pointer; transition: all .2s; font-family: inherit;
+  }
+  .btn-start:hover { background: #7c73ff; }
+  .btn-start:disabled { background: var(--bg3); color: var(--dim); cursor: not-allowed; }
+
+  /* ── Weights Form ── */
+  .weights-form { width: 100%; }
+  .weights-form h3 { margin: 0 0 4px; font-size: 1.1rem; }
+  .weights-form > p { margin: 0 0 16px; color: var(--text2); font-size: 0.85rem; }
+  .weights-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; max-height: 52vh; overflow-y: auto; padding-left: 4px; }
+  .weight-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg3); border-radius: 10px; padding: 9px 12px;
+    direction: rtl;
+  }
+  .weight-label { flex: 1; font-size: 0.85rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .weight-label input {
+    background: none; border: none; border-bottom: 1px dashed var(--border);
+    color: var(--text); font-size: 0.85rem; font-family: inherit;
+    width: 140px; outline: none; direction: rtl; padding: 1px 2px;
+  }
+  .weight-btns { display: flex; gap: 4px; flex-shrink: 0; }
+  .weight-btn {
+    background: none; border: 1px solid var(--border); border-radius: 7px;
+    color: var(--dim); font-size: 0.72rem; padding: 4px 7px; cursor: pointer;
+    font-family: inherit; transition: all .15s; white-space: nowrap;
+  }
+  .weight-btn:hover { border-color: var(--accent); color: var(--text); }
+  .weight-btn.w-low.sel    { background: rgba(255,255,255,.08); border-color: #888; color: #aaa; }
+  .weight-btn.w-mid.sel    { background: rgba(108,99,255,.15); border-color: var(--accent); color: var(--accent); }
+  .weight-btn.w-high.sel   { background: rgba(0,212,170,.15); border-color: var(--cyan); color: var(--cyan); }
+  .weight-btn.w-crit.sel   { background: rgba(255,190,0,.15); border-color: var(--yellow); color: var(--yellow); }
+  .weight-remove { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 1rem; padding: 0 2px; line-height: 1; }
+  .weight-remove:hover { color: #e55; }
+  .add-topic-btn {
+    width: 100%; background: none; border: 1px dashed var(--border); border-radius: 10px;
+    color: var(--dim); padding: 9px; cursor: pointer; font-size: 0.82rem;
+    transition: all .2s; font-family: inherit; margin-bottom: 14px;
+  }
+  .add-topic-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Phase Bar ── */
+  #phase-bar {
+    display: flex; align-items: center; gap: 0;
+    padding: 10px 20px; background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    direction: rtl; overflow-x: auto; flex-shrink: 0;
+  }
+  .phase-step {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.78rem; color: var(--dim); white-space: nowrap;
+    padding: 4px 10px; border-radius: 20px; transition: all .3s;
+  }
+  .phase-step.active { background: rgba(108,99,255,.18); color: var(--accent); font-weight: 600; }
+  .phase-step.done   { color: var(--green); }
+  .phase-arrow { color: var(--dim); font-size: 0.7rem; padding: 0 2px; }
+
+  /* ── Username / Session Screen ── */
+  .username-form { width: 100%; }
+  .username-form h3 { margin: 0 0 6px; font-size: 1.15rem; }
+  .username-form > p { margin: 0 0 20px; color: var(--text2); font-size: 0.85rem; }
+  .username-input-wrap { display: flex; gap: 8px; margin-bottom: 14px; }
+  .username-input {
+    flex: 1; background: var(--bg3); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; color: var(--text);
+    font-size: 0.95rem; font-family: inherit; direction: rtl;
+    outline: none; transition: border-color .2s;
+  }
+  .username-input:focus { border-color: var(--accent); }
+  .btn-login {
+    background: var(--accent); color: #fff; border: none; border-radius: 10px;
+    padding: 12px 20px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+    font-family: inherit; transition: all .2s; white-space: nowrap;
+  }
+  .btn-login:hover { background: #7c73ff; }
+  .session-card {
+    background: var(--bg3); border: 1.5px solid var(--accent);
+    border-radius: 14px; padding: 16px 18px; margin-bottom: 16px;
+    direction: rtl;
+  }
+  .session-card h4 { margin: 0 0 4px; color: var(--accent); font-size: 0.95rem; }
+  .session-card p  { margin: 0 0 12px; color: var(--text2); font-size: 0.82rem; }
+  .session-btns    { display: flex; gap: 8px; }
+  .btn-resume {
+    flex: 1; background: var(--accent); color: #fff; border: none; border-radius: 10px;
+    padding: 10px; font-size: 0.88rem; font-weight: 700; cursor: pointer;
+    font-family: inherit; transition: all .2s;
+  }
+  .btn-resume:hover { background: #7c73ff; }
+  .btn-fresh {
+    flex: 1; background: none; border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text2); padding: 10px; font-size: 0.88rem; cursor: pointer;
+    font-family: inherit; transition: all .2s;
+  }
+  .btn-fresh:hover { border-color: var(--text2); color: var(--text); }
+  .saved-users { margin-top: 14px; }
+  .saved-users-title { font-size: 0.78rem; color: var(--dim); margin-bottom: 8px; direction: rtl; }
+  .saved-user-chip {
+    display: inline-block; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 12px; margin: 3px; font-size: 0.8rem;
+    color: var(--text2); cursor: pointer; transition: all .15s;
+  }
+  .saved-user-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .user-badge {
+    display: flex; align-items: center; gap: 8px; direction: rtl;
+    font-size: 0.82rem; color: var(--text2); cursor: pointer;
+  }
+  .user-badge:hover { color: var(--accent); }
+
+  @media (max-width: 640px) {
+    aside { display: none; }
+    .summary-grid { grid-template-columns: 1fr; }
+    .mode-cards { grid-template-columns: 1fr; }
+  }
+
+  /* ── LANG TOGGLE ── */
+  #lang-btn {
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text2); padding: 5px 11px; border-radius: 8px;
+    cursor: pointer; font-size: 0.8rem; transition: all .2s; font-family: inherit;
+  }
+  #lang-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── TTS BUTTON ── */
+  .tts-btn {
+    background: none; border: none; cursor: pointer; color: var(--dim);
+    font-size: 1rem; padding: 2px 5px; border-radius: 6px;
+    transition: color .15s; flex-shrink: 0; line-height: 1;
+  }
+  .tts-btn:hover { color: var(--accent); }
+  .tts-btn.speaking { color: var(--accent2); }
+  .msg.agent .bubble-wrap { display: flex; align-items: flex-start; gap: 4px; }
+
+  /* ── LANDING PAGE ── */
+  .landing-page { text-align: center; padding: 8px 0; }
+  .landing-icon { font-size: 3.5rem; margin-bottom: 10px; }
+  .landing-title { font-size: 1.4rem; color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+  .landing-tagline { color: var(--text2); font-size: 0.85rem; margin-bottom: 20px; }
+  .landing-features {
+    display: flex; flex-direction: column; gap: 8px;
+    margin-bottom: 24px; text-align: right;
+  }
+  .landing-feature {
+    background: var(--bg3); border-radius: 10px; padding: 10px 14px;
+    font-size: 0.84rem; color: var(--text2);
+  }
+
+  /* ── TOPIC CLICKABLE ── */
+  .topic-item.clickable { cursor: pointer; transition: border-color .15s, background .15s; }
+  .topic-item.clickable:hover:not(.done) {
+    border-color: var(--accent); background: rgba(108,99,255,0.08);
+  }
+  .topic-hint {
+    font-size: 0.68rem; color: var(--dim); margin-bottom: 6px;
+    text-align: center; letter-spacing: 0.3px;
+  }
+
+  /* ── TOPIC PICKER ── */
+  .topic-picker-wrap {
+    padding: 8px 24px 16px;
+    animation: fadeIn .25s ease;
+    flex-shrink: 0;
+  }
+  .topic-picker-header {
+    font-size: 0.82rem;
+    color: var(--text2);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .topic-picker-header::before {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .topic-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 7px;
+  }
+  .topic-pick-btn {
+    background: var(--bg2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 11px;
+    color: var(--text);
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-align: right;
+    transition: all .18s;
+    font-family: inherit;
+    direction: rtl;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    line-height: 1.3;
+  }
+  .topic-pick-btn:hover {
+    border-color: var(--accent);
+    background: rgba(108,99,255,.12);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108,99,255,.2);
+  }
+  .tp-name { font-weight: 600; }
+  .tp-weight {
+    font-size: 0.68rem;
+    font-style: italic;
+    opacity: .7;
+  }
+  .tp-weight.w-crit  { color: var(--red); }
+  .tp-weight.w-high  { color: var(--yellow); }
+  .tp-weight.w-mid   { color: var(--accent); }
+  .tp-weight.w-low   { color: var(--dim); }
+  .topic-pick-btn.w-crit  { border-color: rgba(255,82,82,.4); }
+  .topic-pick-btn.w-high  { border-color: rgba(255,213,79,.35); }
+  .topic-picker-done-btn {
+    margin-top: 8px;
+    width: 100%;
+    padding: 9px;
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    color: var(--text2);
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+    direction: rtl;
+    transition: all .18s;
+  }
+  .topic-picker-done-btn:hover {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgba(105,240,174,.06);
+  }
+</style>
+</head>
+<body>
+
+<!-- API Key Modal -->
+<div id="modal-overlay" class="hidden">
+  <div class="modal">
+    <h2>🔑 הזן מפתח API</h2>
+    <p>המפתח נשמר רק בדפדפן שלך (localStorage) ולא נשלח לשום שרת חיצוני.</p>
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off">
+    <div class="warn">⚠️ לעולם אל תשתף את המפתח שלך. שימוש ישיר מהדפדפן חושף את המפתח ב-DevTools.</div>
+    <button class="modal-btn" onclick="saveApiKey()">המשך</button>
+  </div>
+</div>
+
+<!-- Welcome / Mode Selection Overlay -->
+<div id="welcome-overlay" class="hidden">
+  <div class="welcome-box" id="welcome-inner"></div>
+</div>
+
+<!-- Header -->
+<header>
+  <div>
+    <h1 id="header-title">🏡 יועץ מגורים חכם</h1>
+    <small id="header-subtitle">מבוסס Claude AI</small>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span id="user-badge" class="user-badge" onclick="showUsernameScreen()" style="display:none"></span>
+    <button id="lang-btn" onclick="toggleLang()" title="Switch language">EN</button>
+    <button id="api-key-btn" onclick="showApiKeyModal()">🔑 החלף מפתח</button>
+  </div>
+</header>
+
+<!-- Debug Panel -->
+<div id="debug-panel" style="position:fixed;bottom:0;left:0;right:0;max-height:220px;overflow-y:auto;background:#0d1117;border-top:2px solid #f85149;font-family:monospace;font-size:11px;color:#e6edf3;z-index:9999;display:none;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 10px;background:#161b22;border-bottom:1px solid #30363d;position:sticky;top:0">
+    <span style="color:#f85149;font-weight:bold">🐛 DEBUG</span>
+    <div style="display:flex;gap:8px">
+      <button onclick="document.getElementById('debug-log').innerHTML=''" style="background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:10px">נקה</button>
+      <button onclick="document.getElementById('debug-panel').style.display='none'" style="background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:10px">סגור</button>
+    </div>
+  </div>
+  <div id="debug-log" style="padding:6px 10px;display:flex;flex-direction:column;gap:2px"></div>
+</div>
+
+<!-- Main -->
+<main>
+  <!-- Chat -->
+  <div id="chat-wrap">
+    <div id="phase-bar" style="display:none"></div>
+    <div id="messages"></div>
+    <div id="report-view"></div>
+    <div id="input-bar">
+      <textarea id="user-input" placeholder="" rows="1"
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button id="send-btn" onclick="sendMessage()" title="שלח">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <aside>
+    <div>
+      <div class="sidebar-title">אפשרויות</div>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="dot dot-a"></div>
+          <span style="font-size:.8rem">א׳ – משגב</span>
+        </div>
+        <div class="legend-item">
+          <div class="dot dot-b"></div>
+          <span style="font-size:.8rem">ב׳ – בית קמה</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-title" id="sb-progress-title">התקדמות</div>
+      <div class="topic-hint" id="topic-hint" style="display:none"></div>
+      <div class="topics" id="topics-list"></div>
+    </div>
+
+    <div>
+      <div class="sidebar-title" id="sb-score-title">ניקוד כולל</div>
+      <div class="total-box" id="total-box">
+        <div class="total-row">
+          <div class="total-score" id="total-a" style="color:var(--cyan)">—</div>
+          <div class="total-bar-track">
+            <div class="total-bar-fill fill-a" id="total-bar-a" style="width:0"></div>
+          </div>
+        </div>
+        <div class="total-row">
+          <div class="total-score" id="total-b" style="color:var(--yellow)">—</div>
+          <div class="total-bar-track">
+            <div class="total-bar-fill fill-b" id="total-bar-b" style="width:0"></div>
+          </div>
+        </div>
+        <div class="total-row" id="total-row-c" style="display:none">
+          <div class="total-score" id="total-c" style="color:var(--green)">—</div>
+          <div class="total-bar-track">
+            <div class="total-bar-fill fill-c" id="total-bar-c" style="width:0"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<script>
+// ─── Constants ────────────────────────────────────────────────────────────────
+const API_URL    = '/api/proxy';
+const MODEL      = 'claude-opus-4-6';
+
+// ─── Debug ────────────────────────────────────────────────────────────────────
+const DEBUG = false;
+function dbg(msg, color = '#e6edf3', data = null) {
+  if (!DEBUG) return;
+  const panel = document.getElementById('debug-panel');
+  const log   = document.getElementById('debug-log');
+  if (!panel || !log) return;
+  panel.style.display = 'block';
+  const row = document.createElement('div');
+  row.style.cssText = `color:${color};border-bottom:1px solid #21262d;padding:1px 0`;
+  const ts = new Date().toLocaleTimeString('he-IL', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  row.textContent = `[${ts}] ${msg}` + (data !== null ? ' → ' + JSON.stringify(data) : '');
+  log.appendChild(row);
+  log.scrollTop = log.scrollHeight;
+}
+function dbgErr(msg, data = null) { dbg('❌ ' + msg, '#f85149', data); }
+function dbgOk(msg, data = null)  { dbg('✅ ' + msg, '#3fb950', data); }
+function dbgInfo(msg, data = null){ dbg('ℹ️ ' + msg, '#58a6ff', data); }
+const CATEGORIES = ['איכות חיים', 'קהילה', 'חינוך', 'נגישות לעבודה', 'כלכלי', 'בטחון אישי', 'תרבות ופנאי', 'בריאות', 'קרבה למשפחה וחברים'];
+const CATEGORIES_BASE = [...CATEGORIES]; // original 9, used for EN mapping
+const CATEGORIES_EN   = ['Quality of Life','Community','Education','Work Accessibility','Financial','Personal Safety','Culture & Leisure','Health','Proximity to Family & Friends'];
+const OPT_KEYS   = ['a', 'b', 'c'];
+const OPT_LABELS = ['א׳', 'ב׳', 'ג׳'];
+const OPT_FILLS  = ['fill-a', 'fill-b', 'fill-c'];
+
+// ─── Language & Strings ───────────────────────────────────────────────────────
+let currentLang = 'he';
+const STRINGS = {
+  he: {
+    landingTitle:'יועץ מגורים חכם', landingTagline:'ייעוץ מותאם אישית למציאת הבית הנכון לך',
+    landingF1:'🔍 השוואה חכמה בין מספר מקומות',
+    landingF2:'❓ שאלות המותאמות לפרופיל המשפחה שלך',
+    landingF3:'📊 ניקוד מפורט ודוח מסכם עם המלצות',
+    landingBtn:'בוא נתחיל ←',
+    whoAreYou:'מי אתה?', usernameDesc:'הזן שם משתמש כדי לשמור ולהמשיך את הסשן שלך בכל עת',
+    usernamePH:'שם משתמש (כל שם שתרצה)', continueBtn:'המשך →',
+    howHelp:'איך אוכל לעזור לך?', chooseType:'בחר את סוג הייעוץ שמתאים לך:',
+    compareTitle:'השוואה בין אפשרויות', compareDesc:'יש לי 2-3 מקומות ספציפיים ורוצה לבחור ביניהם',
+    guideTitle:'כוון אותי', guideDesc:'עדיין לא יודע לאן — שאל אותי שאלות והמלץ לי מה מתאים',
+    whatOptions:'מה האפשרויות שלך?', enterOptions:'הזן את שמות המקומות / אפשרויות המגורים שאתה שוקל:',
+    optA:'אפשרות א׳', optB:'אפשרות ב׳', optC:'אפשרות ג׳',
+    optAPH:'למשל: בנייה במשגב', optBPH:'למשל: קניה בבית קמה', optCPH:'למשל: מעבר לתל אביב',
+    addThird:'+ הוסף אפשרות שלישית', back:'← חזרה', startCmp:'התחל השוואה ←',
+    whatImportant:'מה חשוב לך?', rateImportance:'דרג את החשיבות של כל נושא — זה ישפיע על המשקל בניקוד הסופי',
+    duration:'משך השאלון:', quick:'⚡ מהיר – 3-4 דקות', deep:'🔍 מעמיק – 10-12 דקות',
+    addTopic:'+ הוסף נושא אישי', startBtn:'התחל ←',
+    wLow:'לא חשוב', wMid:'חשוב', wHigh:'חשוב מאוד', wCrit:'קריטי',
+    welcomeBack:'ברוך הבא חזרה', savedSession:'סשן שמור', phaseLabel:'שלב', savedAt:'נשמר',
+    resumeBtn:'▶ המשך מאיפה עצרת', freshBtn:'🗑 התחל מחדש',
+    sbOptions:'אפשרויות', sbProgress:'התקדמות', sbScore:'ניקוד כולל',
+    inputPH:'כתוב את תשובתך כאן...', freePH:'שאל/י שאלה חופשית...', sendAnswer:'שלח תשובה',
+    topicHint:'לחץ על נושא לבחירה', topicSelectMsg:(c)=>`אני רוצה לדבר על: ${c}`,
+    invalidKey:'מפתח לא תקין — חייב להתחיל ב-sk-', changeKey:'🔑 החלף מפתח',
+    appTitle:'🏡 יועץ מגורים חכם', langBtn:'EN',
+    generalMode:'🧭 מצב כיוון כללי', generalSubtitle:'כיוון כללי לפי העדפות',
+  },
+  en: {
+    landingTitle:'Smart Housing Advisor', landingTagline:'Personalized advice to find the right home for you',
+    landingF1:'🔍 Smart comparison between multiple locations',
+    landingF2:'❓ Questions tailored to your family profile',
+    landingF3:'📊 Detailed scoring and summary report with recommendations',
+    landingBtn:"Let's Start →",
+    whoAreYou:'Who are you?', usernameDesc:'Enter a username to save and continue your session at any time',
+    usernamePH:'Username (any name you like)', continueBtn:'Continue →',
+    howHelp:'How can I help you?', chooseType:'Choose the type of advice that suits you:',
+    compareTitle:'Compare Options', compareDesc:'I have 2-3 specific locations and want to choose between them',
+    guideTitle:'Guide Me', guideDesc:"Not sure yet — ask me questions and recommend what fits",
+    whatOptions:'What are your options?', enterOptions:"Enter the names of the locations / housing options you're considering:",
+    optA:'Option A', optB:'Option B', optC:'Option C',
+    optAPH:'e.g. Building in Misgav', optBPH:'e.g. Buying in Beit Kama', optCPH:'e.g. Moving to Tel Aviv',
+    addThird:'+ Add a third option', back:'← Back', startCmp:'Start Comparison →',
+    whatImportant:'What matters to you?', rateImportance:'Rate the importance of each topic — this affects the weight in the final score',
+    duration:'Questionnaire length:', quick:'⚡ Quick – 3-4 minutes', deep:'🔍 Deep – 10-12 minutes',
+    addTopic:'+ Add personal topic', startBtn:'Start →',
+    wLow:'Not Important', wMid:'Important', wHigh:'Very Important', wCrit:'Critical',
+    welcomeBack:'Welcome Back', savedSession:'Saved Session', phaseLabel:'Stage', savedAt:'Saved',
+    resumeBtn:'▶ Continue where you left off', freshBtn:'🗑 Start Fresh',
+    sbOptions:'Options', sbProgress:'Progress', sbScore:'Total Score',
+    inputPH:'Type your answer here...', freePH:'Ask a free question...', sendAnswer:'Send Answer',
+    topicHint:'Click a topic to choose it', topicSelectMsg:(c)=>`I want to discuss: ${c}`,
+    invalidKey:'Invalid key — must start with sk-', changeKey:'🔑 Change Key',
+    appTitle:'🏡 Smart Housing Advisor', langBtn:'עב',
+    generalMode:'🧭 General Direction Mode', generalSubtitle:'General direction by preferences',
+  }
+};
+
+function S(key) { return STRINGS[currentLang][key]; }
+function catDisplay(cat) {
+  if (currentLang === 'en') {
+    const idx = CATEGORIES_BASE.indexOf(cat);
+    return idx >= 0 ? CATEGORIES_EN[idx] : cat;
+  }
+  return cat;
+}
+
+const PERSONAL_PROFILE_INSTRUCTIONS = `
+**שלב פתיחה – פרטים אישיים (חובה לפני כל שאלות המגורים):**
+שאל שאלה אחת בכל פעם (עם אפשרויות בחירה) על:
+א. הרכב המשפחה: מספר אנשים, גיל כל ילד, גיל המבוגרים
+ב. תעסוקה של כל אחד מבני הזוג (שכיר / עצמאי / מחפש עבודה / לא עובד)
+ג. תחום עיסוק / מקצוע ומיקום מקום העבודה של כל אחד מבני הזוג
+
+לאחר קבלת כל הפרטים, **סכם בקצרה את הפרופיל** (לדוגמה: "אז משפחה עם 2 ילדים בגיל בית ספר, אחד עובד בהייטק בתל אביב ואחד עצמאי מהבית — מעולה, בוא נתחיל...") ועבר לשאלות המגורים.
+
+**כלל מפתח — התאמה אישית של כל שאלה:**
+לפני כל שאלה בתחום מגורים, חשוב על הפרופיל שאספת ונסח את השאלה בהקשר שלו.
+דוגמאות:
+- יש ילדים בגיל גן/יסודי → שאל על קרבה לגנים/בתי ספר, לא "מה חשוב לך בחינוך" בצורה כללית
+- שני בני הזוג שכירים בערים שונות → שאל "כמה זמן נסיעה כל אחד מוכן לסבול ביום?"
+- עצמאי/עובד מהבית → שאל על אינטרנט, שקט לעבודה, לא על נגישות לתחבורה ציבורית
+- ילדים גיל תיכון → שאל על מסגרות חינוך, חברים, פנאי לבני נוער
+- אין ילדים → דלג על שאלות חינוך, התמקד בתרבות/עבודה/קהילה
+- משפחה מורחבת קרובה → שאל על חשיבות הקרבה הפיזית אליהם
+- מקצוע שדורש נסיעות → שאל על קרבה לשדה תעופה/כביש מהיר`;
+
+const MARKERS_INSTRUCTIONS = `
+כאשר אתה שואל שאלה, הוסף בסוף התגובה (בשורה נפרדת):
+##QUESTION## {"q":"השאלה","options":["אפשרות 1","אפשרות 2","אפשרות 3","אחר – ספר בעצמך"]}
+כלל: 3-4 אפשרויות ספציפיות ומותאמות לשאלה + תמיד האחרונה: "אחר – ספר בעצמך"`;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AGENT 1 — Profile: collects family details, outputs ##PROFILE##
+// ══════════════════════════════════════════════════════════════════════════════
+function buildProfilePrompt() {
+  return `אתה סוכן פרופיל משפחתי. תפקידך היחיד: לאסוף פרטים אישיים בדיוק בשלוש שאלות.
+
+שאל שאלה אחת בכל פעם (עם אפשרויות בחירה):
+שאלה 1 — הרכב המשפחה: מי גר בבית, גיל כל ילד, גיל המבוגרים.
+שאלה 2 — תעסוקה: לכל אחד מבני הזוג — שכיר / עצמאי / מחפש עבודה / לא עובד.
+שאלה 3 — מקצוע ומיקום עבודה: לכל אחד מבני הזוג.
+
+לאחר קבלת כל הפרטים:
+א. סכם בחום בשורה אחת ("אז משפחה של... ").
+ב. פלוט בשורה נפרדת בדיוק:
+##PROFILE## {"members":[{"role":"בן זוג א","age":0,"employment":"שכיר","profession":"הנדסה","work_location":"תל אביב"}],"has_kids":true,"kid_ages":[6,9],"summary":"תיאור קצר של הפרופיל"}
+
+עצור לחלוטין לאחר פלוט ה-##PROFILE##. אל תשאל שאלות נוספות.
+${MARKERS_INSTRUCTIONS}
+${currentLang === 'en' ? 'IMPORTANT: Respond entirely in English.' : ''}`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AGENT 2 — Questions: personalized questions per topic, outputs ##SCORE## + ##QUESTIONS_DONE##
+// ══════════════════════════════════════════════════════════════════════════════
+function buildQuestionsPrompt(profile) {
+  const opts = appOptions.length
+    ? `\nהמשתמש משווה בין: ${appOptions.map((o,i) => `${['א׳','ב׳','ג׳'][i]}: ${o}`).join(' | ')}\n`
+    : '';
+  const totalTopics = Object.keys(appWeightsMap).length || CATEGORIES.length;
+  const topicsList  = Object.keys(appWeightsMap).length
+    ? Object.entries(appWeightsMap).map(([k,v]) => `  • ${k} [${v}]`).join('\n')
+    : CATEGORIES.map(c => `  • ${c} [חשוב]`).join('\n');
+  const scoreKeys = appOptions.length
+    ? appOptions.map((_,i) => `"score_${'abc'[i]}":N`).join(',')
+    : '"score_a":N,"score_b":N';
+  const depthNote = appDepth === 'quick'
+    ? 'שאלון מהיר — שאלה אחת בלבד לכל תחום.'
+    : 'שאלון מעמיק — 2-3 שאלות לכל תחום, התעמק בפרטים.';
+
+  return `אתה סוכן שאלות מגורים. פרופיל המשפחה שנאסף:
+${profile.summary || JSON.stringify(profile)}
+${opts}
+תחומים לסקירה (${totalTopics} סה"כ) ועדיפות כל אחד:
+${topicsList}
+
+הנחיות:
+1. ${depthNote} נושאים [קריטי/חשוב מאוד] — ${appDepth === 'quick' ? 'שאל שאלה ממוקדת יותר' : 'שאל יותר שאלות'}.
+2. **כלל ברזל — כל שאלה חייבת להיות מותאמת לפרופיל הספציפי:**
+   - ילדים בגיל גן/יסודי → שאל על קרבה לגנים/בתי ספר ספציפיים, לא "מה חשוב לך בחינוך" בכלל
+   - שניהם עובדים בערים שונות → "כמה זמן נסיעה ביום כל אחד מוכן לסבול?"
+   - עצמאי/עובד מהבית → שאל על אינטרנט, שקט, מרחב עבודה — לא תחבורה
+   - ילד תיכונאי → מסגרות חינוך, חברים, פנאי לבני נוער באזור
+   - אין ילדים → דלג על חינוך, התמקד בתרבות/עבודה/קהילה
+   - ציין את שמות המקצועות/גילאים/מיקומי עבודה בשאלה עצמה
+3. אחרי שסיימת נושא, פלוט: ##SCORE## {${scoreKeys},"category":"שם_תחום","weight":0.N,"reason":"..."}
+   weight לפי עדיפות המשתמש (סכום כל ${totalTopics} = 1.0)
+   **לאחר ה-##SCORE##: עצור לחלוטין.** אל תמשיך לנושא הבא. אמור משפט קצר כמו "סיימנו את נושא X" — והמתן לבחירת המשתמש.
+4. המשתמש יבחר את הנושא הבא בעצמו (ממשק ויוצג לו). כשהוא בוחר, תשאל אותו שאלות על אותו נושא בלבד.
+5. לאחר שטיפלת בכל ${totalTopics} התחומים (או שהמשתמש ביקש לסיים): פלוט:
+##QUESTIONS_DONE##
+${MARKERS_INSTRUCTIONS}
+${currentLang === 'en' ? 'Style: warm, direct, in fluent English. Highlight each topic name in bold.' : 'סגנון: חם, ישיר, בעברית שוטפת. הצג תחילת כל תחום עם שם התחום מודגש.'}`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AGENT 3 — Report: synthesis, recommendations, gaps, then free chat
+// ══════════════════════════════════════════════════════════════════════════════
+function buildReportPrompt(profile) {
+  const opts = appOptions.length
+    ? appOptions.map((o,i) => `${['א׳','ב׳','ג׳'][i]}: ${o}`).join(' | ')
+    : 'כיוון כללי';
+  const scoresText = Object.entries(scores)
+    .map(([cat, s]) => `  ${cat}: א=${s.a} ב=${s.b} (משקל ${s.weight})`)
+    .join('\n');
+
+  return `אתה סוכן סיכום והמלצות. יש לך גישה לכל השיחה.
+
+פרופיל המשפחה: ${profile?.summary || ''}
+אפשרויות: ${opts}
+ציונים שנאספו:\n${scoresText || '  (בניית ציונים מהשיחה)'}
+
+תפקידך:
+1. כתוב ניתוח מקיף ומנומק של כל התחומים שנדונו.
+2. תן **המלצה ברורה** עם נימוקים — ${appOptions.length ? 'איזו אפשרות מתאימה יותר' : 'איזה סוג מגורים מתאים'}.
+3. ציין **נושאים פתוחים / פערים** שלא עלו בשאלון אך חשובים לפרופיל זה.
+4. הצע **3-5 שאלות המשך** שכדאי לשאול.
+5. פלוט: ##REPORT## {"summary_a":"...","summary_b":"...","key_tension":"...","recommendation_note":"..."}
+6. לאחר הדוח, כתוב בשורה נפרדת: "💬 שיחה חופשית — שאל/י אותי כל שאלה נוספת על הנושא, אשמח להעמיק בכל נקודה."
+
+${currentLang === 'en' ? 'Style: professional, warm, detailed. Fluent English.' : 'סגנון: מקצועי, חם, מפורט. עברית שוטפת.'}`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AGENT 4 — Free Chat: open-ended follow-up
+// ══════════════════════════════════════════════════════════════════════════════
+function buildFreeChatPrompt(profile) {
+  const opts = appOptions.length
+    ? `המשתמש השווה בין: ${appOptions.join(', ')}. `
+    : '';
+  const langNote = currentLang === 'en'
+    ? 'You are a professional, empathetic housing advisor. Respond entirely in English.'
+    : 'אתה יועץ מגורים ישראלי מקצועי ואמפתי.';
+  return `${langNote} ${opts}פרופיל: ${profile?.summary || ''}.
+ניתחת כבר את כל התחומים ונתת המלצות. עכשיו המשתמש רוצה להמשיך בשיחה חופשית.
+ענה על כל שאלה בצורה מעמיקה ומותאמת לפרופיל הספציפי שנאסף בשיחה.
+אל תשאל שאלות חדשות מיוזמתך — ענה על מה שנשאל. ${currentLang === 'en' ? 'Respond in English.' : 'בעברית שוטפת.'}`;
+}
+
+// ─── Session persistence ──────────────────────────────────────────────────────
+const SESSIONS_KEY = 'housing_sessions';
+
+function allSessions() {
+  try { return JSON.parse(localStorage.getItem(SESSIONS_KEY) || '{}'); } catch { return {}; }
+}
+
+function saveSession() {
+  if (!currentUsername) return;
+  const sessions = allSessions();
+  sessions[currentUsername] = {
+    savedAt:      new Date().toISOString(),
+    messages,
+    scores,
+    reportData,
+    appMode,
+    appOptions,
+    appDepth,
+    appWeightsMap,
+    appPhase,
+    appProfile,
+    categories: [...CATEGORIES],
+  };
+  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+}
+
+function loadSession(username) {
+  const s = allSessions()[username];
+  if (!s) return false;
+  messages      = s.messages      || [];
+  scores        = s.scores        || {};
+  reportData    = s.reportData    || {};
+  appMode       = s.appMode       || null;
+  appOptions    = s.appOptions    || [];
+  appDepth      = s.appDepth      || 'full';
+  appWeightsMap = s.appWeightsMap || {};
+  appPhase      = s.appPhase      || 'profile';
+  appProfile    = s.appProfile    || null;
+  if (s.categories?.length) {
+    CATEGORIES.splice(0, CATEGORIES.length, ...s.categories);
+  }
+  return true;
+}
+
+function deleteSession(username) {
+  const sessions = allSessions();
+  delete sessions[username];
+  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+}
+
+function rebuildSystemPrompt() {
+  switch (appPhase) {
+    case 'profile':   SYSTEM_PROMPT = buildProfilePrompt();             break;
+    case 'questions': SYSTEM_PROMPT = buildQuestionsPrompt(appProfile); break;
+    case 'report':    SYSTEM_PROMPT = buildReportPrompt(appProfile);    break;
+    case 'free':      SYSTEM_PROMPT = buildFreeChatPrompt(appProfile);  break;
+  }
+}
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let currentUsername = null;
+let apiKey          = localStorage.getItem('anthropic_key') || '';
+let messages      = [];
+let scores        = {};
+let reportData    = {};
+let isLoading     = false;
+let appMode       = null;    // 'compare' | 'guide'
+let appOptions    = [];      // option names in compare mode
+let appDepth      = 'full';  // 'quick' | 'full'
+let appWeightsMap = {};      // topic → priority label
+let appPhase      = 'profile'; // 'profile' | 'questions' | 'report' | 'free'
+let appProfile    = null;    // parsed ##PROFILE## data
+let SYSTEM_PROMPT = '';
+let _currentScreen = 'landing'; // must be before init calls (showLandingPage uses it)
+
+const PHASES = [
+  { id: 'profile',   label: '🧑‍👩‍👧 פרטי משפחה' },
+  { id: 'questions', label: '❓ שאלות' },
+  { id: 'report',    label: '📊 סיכום' },
+  { id: 'free',      label: '💬 שיחה חופשית' },
+];
+
+function updatePhaseBar() {
+  const bar = document.getElementById('phase-bar');
+  if (!bar) return;
+  bar.style.display = 'flex';
+  const editBtn = appPhase === 'questions'
+    ? `<button onclick="showEditProfileModal()" style="margin-right:auto;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:0.75rem;padding:3px 10px;cursor:pointer;font-family:inherit;transition:all .2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">✏️ ערוך פרטים אישיים</button>`
+    : '';
+  bar.innerHTML = PHASES.map((p, i) => {
+    const idx = PHASES.findIndex(x => x.id === appPhase);
+    const done   = i < idx;
+    const active = p.id === appPhase;
+    const arrow  = i < PHASES.length - 1 ? `<span class="phase-arrow">←</span>` : '';
+    return `<span class="phase-step${active ? ' active' : done ? ' done' : ''}">${p.label}</span>${arrow}`;
+  }).join('') + editBtn;
+}
+
+function showEditProfileModal() {
+  const profile = appProfile || {};
+  const members = profile.members || [];
+
+  // Build editable rows for each member
+  const memberRows = members.map((m, i) => `
+    <div style="background:var(--bg3);border-radius:10px;padding:12px;margin-bottom:8px;direction:rtl">
+      <div style="font-weight:600;margin-bottom:8px;color:var(--accent)">${m.role || `איש ${i+1}`}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <div style="font-size:0.75rem;color:var(--dim);margin-bottom:3px">גיל</div>
+          <input data-mi="${i}" data-field="age" value="${m.age||''}" placeholder="גיל"
+            style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:0.85rem;direction:rtl;outline:none;box-sizing:border-box">
+        </div>
+        <div>
+          <div style="font-size:0.75rem;color:var(--dim);margin-bottom:3px">תעסוקה</div>
+          <input data-mi="${i}" data-field="employment" value="${m.employment||''}" placeholder="שכיר/עצמאי/..."
+            style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:0.85rem;direction:rtl;outline:none;box-sizing:border-box">
+        </div>
+        <div>
+          <div style="font-size:0.75rem;color:var(--dim);margin-bottom:3px">מקצוע</div>
+          <input data-mi="${i}" data-field="profession" value="${m.profession||''}" placeholder="מקצוע"
+            style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:0.85rem;direction:rtl;outline:none;box-sizing:border-box">
+        </div>
+        <div>
+          <div style="font-size:0.75rem;color:var(--dim);margin-bottom:3px">מיקום עבודה</div>
+          <input data-mi="${i}" data-field="work_location" value="${m.work_location||''}" placeholder="עיר/אזור"
+            style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:0.85rem;direction:rtl;outline:none;box-sizing:border-box">
+        </div>
+      </div>
+    </div>`).join('');
+
+  const kidsRow = `
+    <div style="background:var(--bg3);border-radius:10px;padding:12px;margin-bottom:8px;direction:rtl">
+      <div style="font-weight:600;margin-bottom:8px">ילדים</div>
+      <input id="edit-kid-ages" value="${(profile.kid_ages||[]).join(', ')}" placeholder="גילאי ילדים מופרדים בפסיק (למשל: 6, 9)"
+        style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:0.85rem;direction:rtl;outline:none;box-sizing:border-box">
+    </div>`;
+
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'edit-profile-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = `
+    <div style="background:var(--bg2);border-radius:16px;padding:24px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;direction:rtl">
+      <h3 style="margin:0 0 16px;font-size:1.1rem">✏️ עריכת פרטים אישיים</h3>
+      ${memberRows || '<p style="color:var(--dim)">לא נמצאו פרטים לעריכה</p>'}
+      ${kidsRow}
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button onclick="saveEditedProfile()" style="flex:1;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:11px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:inherit">שמור ועדכן</button>
+        <button onclick="document.getElementById('edit-profile-overlay').remove()" style="background:none;border:1px solid var(--border);border-radius:10px;color:var(--text2);padding:11px 18px;cursor:pointer;font-family:inherit">ביטול</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function saveEditedProfile() {
+  if (!appProfile) appProfile = {};
+  if (!appProfile.members) appProfile.members = [];
+
+  // Collect member edits
+  document.querySelectorAll('#edit-profile-overlay input[data-mi]').forEach(inp => {
+    const i = +inp.dataset.mi;
+    const f = inp.dataset.field;
+    if (!appProfile.members[i]) appProfile.members[i] = {};
+    appProfile.members[i][f] = inp.value.trim();
+    if (f === 'age') appProfile.members[i][f] = +inp.value || 0;
+  });
+
+  // Kids ages
+  const kidsVal = document.getElementById('edit-kid-ages')?.value.trim();
+  if (kidsVal) {
+    appProfile.kid_ages = kidsVal.split(',').map(s => +s.trim()).filter(n => !isNaN(n) && n > 0);
+    appProfile.has_kids = appProfile.kid_ages.length > 0;
+  }
+
+  // Rebuild summary
+  const names = appProfile.members.map(m => `${m.role||''} (${m.profession||''}, ${m.work_location||''})`).join('; ');
+  const kids  = appProfile.kid_ages?.length ? `, ילדים בגילאי ${appProfile.kid_ages.join(', ')}` : '';
+  appProfile.summary = names + kids;
+
+  // Rebuild questions system prompt with updated profile
+  SYSTEM_PROMPT = buildQuestionsPrompt(appProfile);
+  saveSession();
+
+  document.getElementById('edit-profile-overlay').remove();
+
+  // Inject a brief note into chat
+  addMessage('agent', `✅ הפרטים עודכנו. השאלות הבאות יתחשבו במידע המעודכן.`);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+buildTopicsSidebar();
+showLandingPage();
+
+// ─── API Key Modal ────────────────────────────────────────────────────────────
+function showApiKeyModal() {
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  document.getElementById('api-key-input').value = apiKey;
+  setTimeout(() => document.getElementById('api-key-input').focus(), 100);
+}
+
+function saveApiKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val.startsWith('sk-')) {
+    dbgErr('saveApiKey: מפתח לא תקין (לא מתחיל ב-sk-)');
+    alert(S('invalidKey'));
+    return;
+  }
+  apiKey = val;
+  localStorage.setItem('anthropic_key', apiKey);
+  document.getElementById('modal-overlay').classList.add('hidden');
+  dbgOk('saveApiKey: מפתח נשמר', { keyPrefix: val.slice(0,12)+'...', messagesLen: messages.length });
+  if (messages.length === 0) {
+    dbgInfo('saveApiKey: messages ריק → showUsernameScreen');
+    showUsernameScreen();
+  } else {
+    dbgInfo('saveApiKey: messages לא ריק → נשאר בשיחה', { messagesLen: messages.length });
+  }
+}
+
+document.getElementById('api-key-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveApiKey();
+});
+
+// ─── Username / Session ───────────────────────────────────────────────────────
+function showUsernameScreen() {
+  dbgInfo('showUsernameScreen: נכנס');
+  _currentScreen = 'username';
+  const box = document.getElementById('welcome-inner');
+  const sessions = allSessions();
+  const usernames = Object.keys(sessions);
+  const locale = currentLang === 'he' ? 'he-IL' : 'en-US';
+
+  const savedChips = usernames.length
+    ? `<div class="saved-users">
+        <div class="saved-users-title">${currentLang === 'he' ? 'משתמשים שמורים — לחץ לבחירה:' : 'Saved users — click to select:'}</div>
+        ${usernames.map(u => {
+          const d = new Date(sessions[u].savedAt);
+          const label = `${u} (${d.toLocaleDateString(locale)} ${d.toLocaleTimeString(locale, {hour:'2-digit',minute:'2-digit'})})`;
+          return `<span class="saved-user-chip" onclick="document.getElementById('username-input').value='${u}';handleUsernameEnter()">${label}</span>`;
+        }).join('')}
+       </div>`
+    : '';
+
+  box.innerHTML = `
+    <div class="username-form">
+      <div class="w-icon">👤</div>
+      <h3>${S('whoAreYou')}</h3>
+      <p>${S('usernameDesc')}</p>
+      <div class="username-input-wrap">
+        <input class="username-input" id="username-input" placeholder="${S('usernamePH')}" maxlength="40"
+          onkeydown="if(event.key==='Enter') handleUsernameEnter()" autocomplete="off">
+        <button class="btn-login" onclick="handleUsernameEnter()">${S('continueBtn')}</button>
+      </div>
+      ${savedChips}
+    </div>`;
+
+  document.getElementById('welcome-overlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('username-input')?.focus(), 80);
+}
+
+function handleUsernameEnter() {
+  const val = document.getElementById('username-input')?.value.trim();
+  if (!val) return;
+  currentUsername = val;
+  updateUserBadge();
+
+  const existing = allSessions()[val];
+  if (existing && existing.messages?.length > 0) {
+    showResumeScreen(val, existing);
+  } else {
+    showWelcome();
+  }
+}
+
+function showResumeScreen(username, session) {
+  _currentScreen = 'resume';
+  const box = document.getElementById('welcome-inner');
+  const locale = currentLang === 'he' ? 'he-IL' : 'en-US';
+  const date = session.savedAt ? new Date(session.savedAt) : new Date();
+  const dateStr = `${date.toLocaleDateString(locale)} ${date.toLocaleTimeString(locale, {hour:'2-digit',minute:'2-digit'})}`;
+  const phaseLabel = PHASES.find(p => p.id === session.appPhase)?.label || session.appPhase || '';
+  const optionsStr = session.appOptions?.length
+    ? session.appOptions.join(' | ')
+    : (session.appMode === 'guide' ? (currentLang === 'he' ? 'כיוון כללי' : 'General Direction') : '');
+
+  box.innerHTML = `
+    <div class="username-form">
+      <div class="w-icon">🔄</div>
+      <h3>${S('welcomeBack')}, ${username}!</h3>
+      <div class="session-card">
+        <h4>${S('savedSession')}</h4>
+        <p>
+          ${optionsStr ? `<strong>${optionsStr}</strong><br>` : ''}
+          ${S('phaseLabel')}: ${phaseLabel}<br>
+          ${S('savedAt')}: ${dateStr}
+        </p>
+        <div class="session-btns">
+          <button class="btn-resume" onclick="resumeSession()">${S('resumeBtn')}</button>
+          <button class="btn-fresh" onclick="confirmFreshStart()">${S('freshBtn')}</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ─── Markers ──────────────────────────────────────────────────────────────────
+const SCORE_RE          = /##SCORE##\s*(\{[\s\S]*?\})/g;
+const REPORT_RE         = /##REPORT##\s*(\{[\s\S]*?\})/g;
+const QUESTION_RE       = /##QUESTION##\s*(\{[\s\S]*?\})/;
+const QUESTIONS_DONE_RE = /##QUESTIONS_DONE##/;
+
+function resumeSession() {
+  if (!loadSession(currentUsername)) { showWelcome(); return; }
+
+  buildTopicsSidebar();
+  rebuildSystemPrompt();
+  updatePhaseBar();
+
+  // Restore sidebar legend
+  if (appMode === 'compare' && appOptions.length) {
+    const legendEl = document.querySelector('.legend');
+    if (legendEl) {
+      const colors = ['var(--cyan)', 'var(--yellow)', 'var(--green)'];
+      legendEl.innerHTML = appOptions.map((o, i) => `
+        <div class="legend-item">
+          <div class="dot" style="background:${colors[i]}"></div>
+          <span style="font-size:.8rem">${['א׳','ב׳','ג׳'][i]} – ${o}</span>
+        </div>`).join('');
+    }
+    document.getElementById('header-subtitle').textContent =
+      appOptions.map((o,i) => `${['א׳','ב׳','ג׳'][i]}: ${o}`).join(' | ');
+  } else if (appMode === 'guide') {
+    const legendEl = document.querySelector('.legend');
+    if (legendEl) legendEl.innerHTML = `<div class="legend-item" style="color:var(--text2);font-size:.82rem">${S('generalMode')}</div>`;
+    document.getElementById('header-subtitle').textContent = S('generalSubtitle');
+  }
+
+  // Show/hide 3rd total bar
+  const rowC = document.getElementById('total-row-c');
+  if (rowC) rowC.style.display = appOptions.length >= 3 ? '' : 'none';
+
+  // Restore scores to sidebar
+  Object.entries(scores).forEach(([cat, s]) => updateSidebarScore(cat, s.a, s.b, s.c));
+
+  // Restore chat messages (strip internal markers from display)
+  document.getElementById('messages').innerHTML = '';
+  messages.forEach(m => {
+    if (m.role === 'system') return;
+    let display = m.content;
+    if (m.role === 'assistant') {
+      display = m.content
+        .replace(new RegExp(SCORE_RE.source, 'g'), '')
+        .replace(new RegExp(REPORT_RE.source, 'g'), '')
+        .replace(QUESTION_RE, '')
+        .replace(/##PROFILE##\s*\{[\s\S]*?\}/, '')
+        .replace(QUESTIONS_DONE_RE, '')
+        .trim();
+    }
+    if (display) addMessage(m.role === 'user' ? 'user' : 'agent', display);
+  });
+
+  // If mid-report phase, show report
+  if (appPhase === 'report' || appPhase === 'free') {
+    if (Object.keys(reportData).length) showReport();
+    if (appPhase === 'free') {
+      document.getElementById('user-input').placeholder = S('freePH');
+    }
+  }
+
+  document.getElementById('welcome-overlay').classList.add('hidden');
+  setInputDisabled(false);
+  document.getElementById('user-input').focus();
+}
+
+function confirmFreshStart() {
+  if (!confirm(`למחוק את הסשן של "${currentUsername}" ולהתחיל מחדש?`)) return;
+  deleteSession(currentUsername);
+  showWelcome();
+}
+
+function updateUserBadge() {
+  const badge = document.getElementById('user-badge');
+  if (!badge) return;
+  if (currentUsername) {
+    badge.style.display = 'flex';
+    badge.innerHTML = `👤 ${currentUsername} <span style="font-size:.7rem;margin-right:4px;color:var(--dim)">(החלף)</span>`;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// ─── Welcome / Mode Selection ─────────────────────────────────────────────────
+function showWelcome() {
+  _currentScreen = 'welcome';
+  const box = document.getElementById('welcome-inner');
+  box.innerHTML = `
+    <div class="w-icon">🏡</div>
+    <h2>${S('howHelp')}</h2>
+    <p>${S('chooseType')}</p>
+    <div class="mode-cards">
+      <div class="mode-card" onclick="showCompareForm()">
+        <div class="mc-icon">🔍</div>
+        <h3>${S('compareTitle')}</h3>
+        <p>${S('compareDesc')}</p>
+      </div>
+      <div class="mode-card" onclick="startGuide()">
+        <div class="mc-icon">🧭</div>
+        <h3>${S('guideTitle')}</h3>
+        <p>${S('guideDesc')}</p>
+      </div>
+    </div>`;
+  document.getElementById('welcome-overlay').classList.remove('hidden');
+}
+
+function showCompareForm(extraOption = false) {
+  _currentScreen = 'compare';
+  const box = document.getElementById('welcome-inner');
+  const thirdInput = extraOption
+    ? `<div class="opt-input-row">
+         <span class="opt-label">${S('optC')}</span>
+         <input class="opt-input" id="opt-c" placeholder="${S('optCPH')}" maxlength="60">
+       </div>`
+    : `<button class="add-option-btn" onclick="showCompareForm(true)">${S('addThird')}</button>`;
+
+  box.innerHTML = `
+    <div class="options-form">
+      <h3>${S('whatOptions')}</h3>
+      <p>${S('enterOptions')}</p>
+      <div class="opt-input-wrap">
+        <div class="opt-input-row">
+          <span class="opt-label">${S('optA')}</span>
+          <input class="opt-input" id="opt-a" placeholder="${S('optAPH')}" maxlength="60"
+            value="${document.getElementById('opt-a')?.value || ''}">
+        </div>
+        <div class="opt-input-row">
+          <span class="opt-label">${S('optB')}</span>
+          <input class="opt-input" id="opt-b" placeholder="${S('optBPH')}" maxlength="60"
+            value="${document.getElementById('opt-b')?.value || ''}">
+        </div>
+        ${thirdInput}
+      </div>
+      <div class="form-nav">
+        <button class="btn-back-form" onclick="showWelcome()">${S('back')}</button>
+        <button class="btn-start" id="start-compare-btn" onclick="startCompare()">${S('startCmp')}</button>
+      </div>
+    </div>`;
+
+  // Enable/disable start button based on inputs
+  setTimeout(() => {
+    ['opt-a','opt-b','opt-c'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', validateCompareForm);
+    });
+    validateCompareForm();
+    document.getElementById('opt-a')?.focus();
+  }, 50);
+}
+
+function validateCompareForm() {
+  const a = document.getElementById('opt-a')?.value.trim();
+  const b = document.getElementById('opt-b')?.value.trim();
+  const btn = document.getElementById('start-compare-btn');
+  if (btn) btn.disabled = !(a && b);
+}
+
+function startCompare() {
+  const a = document.getElementById('opt-a')?.value.trim();
+  const b = document.getElementById('opt-b')?.value.trim();
+  const c = document.getElementById('opt-c')?.value.trim();
+  if (!a || !b) return;
+  appOptions = [a, b, ...(c ? [c] : [])];
+  showWeightsForm('compare');
+}
+
+function startGuide() {
+  appOptions = [];
+  showWeightsForm('guide');
+}
+
+// ─── Weights Form ─────────────────────────────────────────────────────────────
+let _customTopicCount = 0;
+
+function showWeightsForm(mode) {
+  _currentScreen = 'weights';
+  appMode = mode;
+  _customTopicCount = 0;
+  const box = document.getElementById('welcome-inner');
+
+  const depthRow = mode === 'compare' ? `
+    <div style="margin-bottom:16px">
+      <div style="font-size:0.85rem;color:var(--text2);margin-bottom:8px">${S('duration')}</div>
+      <div style="display:flex;gap:8px;direction:${currentLang==='he'?'rtl':'ltr'}">
+        <button class="weight-btn w-high sel" id="depth-quick" onclick="selectDepth('quick')" style="flex:1;padding:9px">
+          ${S('quick')}
+        </button>
+        <button class="weight-btn w-mid" id="depth-full" onclick="selectDepth('full')" style="flex:1;padding:9px">
+          ${S('deep')}
+        </button>
+      </div>
+    </div>` : '';
+
+  const rows = CATEGORIES.map(cat => weightRow(cat, S('wMid'))).join('');
+
+  box.innerHTML = `
+    <div class="weights-form">
+      <h3>${S('whatImportant')}</h3>
+      <p>${S('rateImportance')}</p>
+      ${depthRow}
+      <div class="weights-list" id="weights-list">${rows}</div>
+      <button class="add-topic-btn" onclick="addCustomTopic()">${S('addTopic')}</button>
+      <div class="form-nav">
+        <button class="btn-back-form" onclick="${mode === 'compare' ? 'showCompareForm()' : 'showWelcome()'}">←</button>
+        <button class="btn-start" onclick="confirmWeights()">${S('startBtn')}</button>
+      </div>
+    </div>`;
+
+  appDepth = mode === 'compare' ? 'quick' : 'full';
+}
+
+function weightRow(label, defaultVal, removable = false) {
+  const levels  = [S('wLow'), S('wMid'), S('wHigh'), S('wCrit')];
+  const classes = ['w-low', 'w-mid', 'w-high', 'w-crit'];
+  const btns = levels.map((l, i) =>
+    `<button class="weight-btn ${classes[i]}${l === defaultVal ? ' sel' : ''}"
+      onclick="selectWeight(this)">${l}</button>`
+  ).join('');
+  const removeBtn = removable
+    ? `<button class="weight-remove" onclick="this.closest('.weight-row').remove()" title="Remove">✕</button>`
+    : '';
+  return `<div class="weight-row" data-topic="${label}">
+    <div class="weight-label">${catDisplay(label)}</div>
+    <div class="weight-btns">${btns}</div>
+    ${removeBtn}
+  </div>`;
+}
+
+function selectWeight(btn) {
+  const row = btn.closest('.weight-row');
+  row.querySelectorAll('.weight-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+function selectDepth(val) {
+  appDepth = val;
+  document.getElementById('depth-quick').classList.toggle('sel', val === 'quick');
+  document.getElementById('depth-full').classList.toggle('sel', val === 'full');
+}
+
+function addCustomTopic() {
+  _customTopicCount++;
+  const id = `custom-${_customTopicCount}`;
+  const list = document.getElementById('weights-list');
+  const div = document.createElement('div');
+  div.innerHTML = `<div class="weight-row" data-topic-custom="${id}">
+    <div class="weight-label"><input type="text" placeholder="${currentLang==='he'?'נושא חדש...':'New topic...'}" maxlength="30" oninput="this.closest('[data-topic-custom]').dataset.topic=this.value"></div>
+    <div class="weight-btns">
+      <button class="weight-btn w-low" onclick="selectWeight(this)">${S('wLow')}</button>
+      <button class="weight-btn w-mid sel" onclick="selectWeight(this)">${S('wMid')}</button>
+      <button class="weight-btn w-high" onclick="selectWeight(this)">${S('wHigh')}</button>
+      <button class="weight-btn w-crit" onclick="selectWeight(this)">${S('wCrit')}</button>
+    </div>
+    <button class="weight-remove" onclick="this.closest('.weight-row').remove()" title="הסר">✕</button>
+  </div>`;
+  list.appendChild(div.firstElementChild);
+  list.scrollTop = list.scrollHeight;
+  list.querySelector(`[data-topic-custom="${id}"] input`)?.focus();
+}
+
+function confirmWeights() {
+  const weightsMap = {};
+  document.querySelectorAll('#weights-list .weight-row').forEach(row => {
+    const topic = row.dataset.topic?.trim();
+    if (!topic) return;
+    const sel = row.querySelector('.weight-btn.sel');
+    weightsMap[topic] = sel ? sel.textContent.trim() : 'חשוב';
+  });
+
+  // Store globally for use by agents 2 & 3
+  appWeightsMap = weightsMap;
+
+  // Add custom topics to sidebar + CATEGORIES
+  Object.keys(weightsMap).filter(t => !CATEGORIES.includes(t))
+    .forEach(t => CATEGORIES.push(t));
+  buildTopicsSidebar();
+
+  // Update sidebar legend
+  if (appMode === 'compare') {
+    const legendEl = document.querySelector('.legend');
+    if (legendEl) {
+      const colors = ['var(--cyan)', 'var(--yellow)', 'var(--green)'];
+      legendEl.innerHTML = appOptions.map((o, i) => `
+        <div class="legend-item">
+          <div class="dot" style="background:${colors[i]}"></div>
+          <span style="font-size:.8rem">${['א׳','ב׳','ג׳'][i]} – ${o}</span>
+        </div>`).join('');
+    }
+    document.getElementById('header-subtitle').textContent =
+      appOptions.map((o,i) => `${['א׳','ב׳','ג׳'][i]}: ${o}`).join(' | ');
+  } else {
+    const legendEl = document.querySelector('.legend');
+    if (legendEl) legendEl.innerHTML = `
+      <div class="legend-item" style="color:var(--text2);font-size:.82rem">${S('generalMode')}</div>`;
+    document.getElementById('header-subtitle').textContent = S('generalSubtitle');
+  }
+
+  // Show/hide 3rd total bar
+  const rowC = document.getElementById('total-row-c');
+  if (rowC) rowC.style.display = appOptions.length >= 3 ? '' : 'none';
+
+  document.getElementById('welcome-overlay').classList.add('hidden');
+  initConversation();
+}
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+function sidebarOptionCount() {
+  return Math.max(appOptions.length, 2);
+}
+
+function buildTopicsSidebar() {
+  const n    = sidebarOptionCount();
+  const list = document.getElementById('topics-list');
+  const clickable = appPhase === 'questions';
+  const hint = document.getElementById('topic-hint');
+  if (hint) { hint.textContent = S('topicHint'); hint.style.display = clickable ? '' : 'none'; }
+  list.innerHTML = CATEGORIES.map(cat => {
+    const bars = OPT_KEYS.slice(0, n).map((k, i) => `
+      <div class="mini-bar-row">
+        <span>${OPT_LABELS[i]}</span>
+        <div class="mini-bar-track"><div class="mini-bar-fill ${OPT_FILLS[i]}" id="bar-${k}-${cat}" style="width:0"></div></div>
+        <span id="val-${k}-${cat}">—</span>
+      </div>`).join('');
+    return `
+    <div class="topic-item${clickable ? ' clickable' : ''}" id="topic-${cat}"
+      ${clickable ? `onclick="clickTopic('${cat.replace(/'/g,"\\\'")}')"` : ''}>
+      <div class="topic-name">
+        <span>${catDisplay(cat)}</span>
+        <span class="topic-check" id="check-${cat}" style="display:none">✓</span>
+      </div>
+      <div class="mini-bars">${bars}</div>
+    </div>`;
+  }).join('');
+}
+
+function updateSidebarScore(cat, scoreA, scoreB, scoreC) {
+  const item  = document.getElementById(`topic-${cat}`);
+  if (!item) return;
+  item.classList.add('done');
+  const check = document.getElementById(`check-${cat}`);
+  if (check) check.style.display = 'inline';
+
+  const vals = [scoreA, scoreB, scoreC];
+  OPT_KEYS.slice(0, sidebarOptionCount()).forEach((k, i) => {
+    const bar = document.getElementById(`bar-${k}-${cat}`);
+    const val = document.getElementById(`val-${k}-${cat}`);
+    if (bar) bar.style.width = ((vals[i] || 0) * 10) + '%';
+    if (val) val.textContent = vals[i] ?? '—';
+  });
+  updateTotalScore();
+}
+
+function setActiveTopic(cat) {
+  CATEGORIES.forEach(c => {
+    const el = document.getElementById(`topic-${c}`);
+    if (el && !el.classList.contains('done')) el.classList.remove('active');
+  });
+  const el = document.getElementById(`topic-${cat}`);
+  if (el && !el.classList.contains('done')) el.classList.add('active');
+}
+
+function updateTotalScore() {
+  const vals = Object.values(scores);
+  if (!vals.length) return;
+  const totalW = vals.reduce((s, v) => s + v.weight, 0);
+  OPT_KEYS.slice(0, sidebarOptionCount()).forEach((k, i) => {
+    const w = vals.reduce((s, v) => s + (v[k] || 0) * v.weight, 0) / totalW * 10;
+    const el = document.getElementById(`total-${k}`);
+    const bar = document.getElementById(`total-bar-${k}`);
+    if (el)  el.textContent = w.toFixed(1);
+    if (bar) bar.style.width = w + '%';
+  });
+}
+
+// ─── Chat UI ──────────────────────────────────────────────────────────────────
+function addMessage(role, text) {
+  const wrap = document.getElementById('messages');
+  const div  = document.createElement('div');
+  div.className = `msg ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = `avatar avatar-${role}`;
+  avatar.textContent = role === 'agent' ? '🏡' : '👤';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = text;
+
+  if (role === 'agent') {
+    const ttsBtn = document.createElement('button');
+    ttsBtn.className = 'tts-btn';
+    ttsBtn.title = 'Listen';
+    ttsBtn.textContent = '🔊';
+    ttsBtn.onclick = () => speak(bubble.textContent, ttsBtn);
+    const bWrap = document.createElement('div');
+    bWrap.className = 'bubble-wrap';
+    bWrap.appendChild(bubble);
+    bWrap.appendChild(ttsBtn);
+    div.appendChild(avatar);
+    div.appendChild(bWrap);
+  } else {
+    div.appendChild(avatar);
+    div.appendChild(bubble);
+  }
+
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+  return bubble;
+}
+
+function showTyping() {
+  const wrap = document.getElementById('messages');
+  const div  = document.createElement('div');
+  div.className = 'msg agent typing';
+  div.id = 'typing-indicator';
+  div.innerHTML = `
+    <div class="avatar avatar-agent">🏡</div>
+    <div class="bubble"><div class="dots"><span></span><span></span><span></span></div></div>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function removeTyping() {
+  document.getElementById('typing-indicator')?.remove();
+}
+
+// ─── Text-to-Speech ───────────────────────────────────────────────────────────
+let _activeTtsBtn = null;
+function speak(text, btn) {
+  if (!window.speechSynthesis) return;
+  if (window.speechSynthesis.speaking) {
+    window.speechSynthesis.cancel();
+    if (_activeTtsBtn) { _activeTtsBtn.classList.remove('speaking'); _activeTtsBtn.textContent = '🔊'; }
+    if (_activeTtsBtn === btn) { _activeTtsBtn = null; return; }
+  }
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = currentLang === 'he' ? 'he-IL' : 'en-US';
+  utt.rate = 1.0;
+  utt.onend = () => { btn.classList.remove('speaking'); btn.textContent = '🔊'; _activeTtsBtn = null; };
+  utt.onerror = () => { btn.classList.remove('speaking'); btn.textContent = '🔊'; _activeTtsBtn = null; };
+  _activeTtsBtn = btn;
+  btn.classList.add('speaking');
+  btn.textContent = '⏹';
+  window.speechSynthesis.speak(utt);
+}
+
+// ─── Topic Picker UI ──────────────────────────────────────────────────────────
+const WEIGHT_CLASS = {
+  'קריטי':'w-crit','Critical':'w-crit',
+  'חשוב מאוד':'w-high','Very Important':'w-high',
+  'חשוב':'w-mid','Important':'w-mid',
+  'נמוך':'w-low','Low':'w-low',
+};
+
+function showTopicPicker() {
+  removeTopicPicker();
+  const remaining = CATEGORIES.filter(cat => !scores[cat]);
+  if (remaining.length === 0) return;
+
+  document.getElementById('input-bar').style.display = 'none';
+
+  const wrap = document.createElement('div');
+  wrap.id = 'topic-picker';
+  wrap.className = 'topic-picker-wrap';
+
+  const header = document.createElement('div');
+  header.className = 'topic-picker-header';
+  header.textContent = currentLang === 'he' ? 'בחר את הנושא הבא לדיון:' : 'Choose the next topic:';
+  wrap.appendChild(header);
+
+  const grid = document.createElement('div');
+  grid.className = 'topic-picker-grid';
+
+  remaining.forEach(cat => {
+    const weight  = appWeightsMap[cat] || '';
+    const wClass  = WEIGHT_CLASS[weight] || '';
+    const btn     = document.createElement('button');
+    btn.className = `topic-pick-btn${wClass ? ' ' + wClass : ''}`;
+    btn.innerHTML = `<span class="tp-name">${catDisplay(cat)}</span>${weight ? `<span class="tp-weight ${wClass}">${weight}</span>` : ''}`;
+    btn.onclick   = () => {
+      removeTopicPicker();
+      clickTopic(cat);
+    };
+    grid.appendChild(btn);
+  });
+  wrap.appendChild(grid);
+
+  const doneBtn = document.createElement('button');
+  doneBtn.className = 'topic-picker-done-btn';
+  doneBtn.textContent = currentLang === 'he' ? '✓ סיימנו — עבור לדוח' : '✓ Done — go to report';
+  doneBtn.onclick = async () => {
+    removeTopicPicker();
+    addMessage('user', currentLang === 'he' ? 'סיימנו לדון בכל הנושאים הרלוונטיים, אפשר לעבור לדוח.' : 'We covered all relevant topics, please generate the report.');
+    setInputDisabled(true);
+    showTyping();
+    try {
+      await callClaude(currentLang === 'he' ? 'סיימנו לדון בכל הנושאים הרלוונטיים, אפשר לעבור לדוח.' : 'We covered all relevant topics, please generate the report.');
+    } catch(e) {
+      removeTyping();
+      addMessage('agent', `שגיאה: ${e.message}`);
+      setInputDisabled(false);
+    }
+  };
+  wrap.appendChild(doneBtn);
+
+  const chatWrap = document.getElementById('chat-wrap');
+  chatWrap.insertBefore(wrap, document.getElementById('input-bar'));
+  document.getElementById('messages').scrollTop = 9999;
+}
+
+function removeTopicPicker() {
+  document.getElementById('topic-picker')?.remove();
+  document.getElementById('input-bar').style.display = '';
+}
+
+// ─── Interactive Topic Selection ──────────────────────────────────────────────
+async function clickTopic(cat) {
+  if (appPhase !== 'questions' || isLoading) return;
+  const topicEl = document.getElementById(`topic-${cat}`);
+  if (!topicEl || topicEl.classList.contains('done')) return;
+  const text = S('topicSelectMsg')(catDisplay(cat));
+  removeOptions();
+  addMessage('user', text);
+  setInputDisabled(true);
+  showTyping();
+  try {
+    await callClaude(text);
+    setInputDisabled(false);
+    document.getElementById('user-input').focus();
+  } catch(e) {
+    removeTyping();
+    addMessage('agent', `Error: ${e.message}`);
+    setInputDisabled(false);
+  }
+}
+
+// ─── Language Toggle ──────────────────────────────────────────────────────────
+function toggleLang() {
+  currentLang = currentLang === 'he' ? 'en' : 'he';
+  const isHe = currentLang === 'he';
+  document.documentElement.dir  = isHe ? 'rtl' : 'ltr';
+  document.documentElement.lang = currentLang;
+  document.getElementById('lang-btn').textContent  = S('langBtn');
+  document.getElementById('api-key-btn').textContent = S('changeKey');
+  document.getElementById('header-title').textContent = S('appTitle');
+  // Update sidebar static titles
+  const sbp = document.getElementById('sb-progress-title');
+  if (sbp) sbp.textContent = S('sbProgress');
+  const sbs = document.getElementById('sb-score-title');
+  if (sbs) sbs.textContent = S('sbScore');
+  // Re-render current overlay screen
+  reRenderCurrentScreen();
+  // Rebuild sidebar with translated category names
+  buildTopicsSidebar();
+}
+
+function reRenderCurrentScreen() {
+  switch (_currentScreen) {
+    case 'landing':   showLandingPage();    break;
+    case 'username':  showUsernameScreen(); break;
+    case 'welcome':   showWelcome();        break;
+    case 'compare':   showCompareForm();    break;
+    case 'weights':   showWeightsForm(appMode || 'compare'); break;
+    case 'resume':    if (currentUsername) showResumeScreen(currentUsername, {}); break;
+  }
+}
+
+// ─── Landing Page ─────────────────────────────────────────────────────────────
+function showLandingPage() {
+  _currentScreen = 'landing';
+  const box = document.getElementById('welcome-inner');
+  box.innerHTML = `
+    <div class="landing-page">
+      <div class="landing-icon">🏡</div>
+      <div class="landing-title">${S('landingTitle')}</div>
+      <div class="landing-tagline">${S('landingTagline')}</div>
+      <div class="landing-features">
+        <div class="landing-feature">${S('landingF1')}</div>
+        <div class="landing-feature">${S('landingF2')}</div>
+        <div class="landing-feature">${S('landingF3')}</div>
+      </div>
+      <button class="btn-start" onclick="onLandingStart()">${S('landingBtn')}</button>
+    </div>`;
+  document.getElementById('welcome-overlay').classList.remove('hidden');
+}
+
+function onLandingStart() {
+  if (!apiKey) showApiKeyModal();
+  else showUsernameScreen();
+}
+
+// Extract the JSON object that starts after a marker tag, using balanced-brace
+// counting so nested objects (like ##PROFILE##) are handled correctly.
+function extractMarkerJSON(text, tag) {
+  const idx = text.indexOf(tag);
+  if (idx === -1) return null;
+  const start = text.indexOf('{', idx + tag.length);
+  if (start === -1) return null;
+  let depth = 0;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (c === '{') depth++;
+    else if (c === '}') {
+      depth--;
+      if (depth === 0) {
+        try { return JSON.parse(text.slice(start, i + 1)); }
+        catch { return null; }
+      }
+    }
+  }
+  return null;
+}
+
+function parseMarkers(text) {
+  let reportReady   = false;
+  let questionData  = null;
+  let profileData   = null;
+  let questionsDone = false;
+
+  for (const m of text.matchAll(new RegExp(SCORE_RE.source, 'g'))) {
+    try {
+      const d   = JSON.parse(m[1]);
+      const cat = d.category;
+      if (cat && !scores[cat]) {
+        scores[cat] = {
+          a: +d.score_a || 0, b: +d.score_b || 0, c: d.score_c != null ? +d.score_c : undefined,
+          weight: +d.weight, reason: d.reason || ''
+        };
+        if (!CATEGORIES.includes(cat)) CATEGORIES.push(cat);
+        updateSidebarScore(cat, scores[cat].a, scores[cat].b, scores[cat].c);
+      }
+    } catch {}
+  }
+
+  for (const m of text.matchAll(new RegExp(REPORT_RE.source, 'g'))) {
+    try {
+      Object.assign(reportData, JSON.parse(m[1]));
+      reportReady = true;
+    } catch {}
+  }
+
+  const qm = text.match(QUESTION_RE);
+  if (qm) { try { questionData = JSON.parse(qm[1]); } catch {} }
+
+  // Use balanced-brace extraction for nested JSON (##PROFILE##)
+  profileData = extractMarkerJSON(text, '##PROFILE##');
+
+  if (QUESTIONS_DONE_RE.test(text)) questionsDone = true;
+
+  const clean = text
+    .replace(new RegExp(SCORE_RE.source, 'g'), '')
+    .replace(new RegExp(REPORT_RE.source, 'g'), '')
+    .replace(QUESTION_RE, '')
+    .replace(/##PROFILE##\s*\{[\s\S]*\}/, '')   // greedy — strip full nested JSON
+    .replace(QUESTIONS_DONE_RE, '')
+    .trim();
+  return { clean, reportReady, questionData, profileData, questionsDone };
+}
+
+// ─── API Call (streaming) ─────────────────────────────────────────────────────
+async function callClaude(userMessage) {
+  dbgInfo('callClaude: שולח', { phase: appPhase, msgLen: userMessage.length, totalMsgs: messages.length });
+  messages.push({ role: 'user', content: userMessage });
+
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 2048,
+      system: SYSTEM_PROMPT,
+      messages,
+      stream: true,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    dbgErr('callClaude: HTTP שגיאה', { status: response.status, msg: err?.error?.message });
+    throw new Error(err?.error?.message || `HTTP ${response.status}`);
+  }
+  dbgOk('callClaude: HTTP OK', { status: response.status });
+
+  // ── SSE streaming ──────────────────────────────────────────────────────────
+  removeTyping();
+  const bubble = addMessage('agent', '');
+  let fullText = '';
+
+  const reader  = response.body.getReader();
+  const decoder = new TextDecoder();
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const chunk = decoder.decode(value, { stream: true });
+    for (const line of chunk.split('\n')) {
+      if (!line.startsWith('data: ')) continue;
+      const data = line.slice(6).trim();
+      if (data === '[DONE]') break;
+      try {
+        const ev = JSON.parse(data);
+        if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
+          fullText += ev.delta.text;
+          const { clean } = parseMarkers(fullText);
+          bubble.textContent = clean;
+          document.getElementById('messages').scrollTop = 9999;
+        }
+      } catch {}
+    }
+  }
+
+  dbgInfo('callClaude: סטרימינג הסתיים', { fullTextLen: fullText.length });
+  dbgInfo('callClaude: תגובה גולמית (200 תווים ראשונים)', { raw: fullText.slice(0, 200) });
+  const hasQuestion = fullText.includes('##QUESTION##');
+  const hasProfile  = fullText.includes('##PROFILE##');
+  const hasScore    = fullText.includes('##SCORE##');
+  const hasDone     = fullText.includes('##QUESTIONS_DONE##');
+  dbgInfo('callClaude: markers', { hasQuestion, hasProfile, hasScore, hasDone });
+
+  const { clean, reportReady, questionData, profileData, questionsDone } = parseMarkers(fullText);
+  dbgInfo('parseMarkers תוצאות', { reportReady, questionsDone, hasQuestionData: !!questionData, hasProfileData: !!profileData, questionData });
+  bubble.textContent = clean;
+  messages.push({ role: 'assistant', content: fullText });
+  saveSession(); // auto-save after every response
+
+  // ── Phase transitions ───────────────────────────────────────────────────────
+  if (appPhase === 'profile') {
+    if (profileData) {
+      appProfile    = profileData;
+      appPhase      = 'questions';
+      SYSTEM_PROMPT = buildQuestionsPrompt(appProfile);
+      updatePhaseBar();
+      buildTopicsSidebar(); // enable clickable topics
+      document.getElementById('user-input').placeholder = S('inputPH');
+      setInputDisabled(false);
+      document.getElementById('user-input').focus();
+      return;
+    }
+    // Fallback: if profile agent collected enough (≥3 user turns) but forgot the marker,
+    // force-extract a minimal profile from conversation and move on.
+    const userTurns = messages.filter(m => m.role === 'user').length;
+    if (userTurns >= 4) {
+      appProfile    = { summary: 'פרופיל נאסף מהשיחה', members: [] };
+      appPhase      = 'questions';
+      SYSTEM_PROMPT = buildQuestionsPrompt(appProfile);
+      updatePhaseBar();
+      buildTopicsSidebar(); // enable clickable topics
+      document.getElementById('user-input').placeholder = S('inputPH');
+      setInputDisabled(false);
+      document.getElementById('user-input').focus();
+      return;
+    }
+  }
+
+  if (appPhase === 'questions' && questionsDone) {
+    appPhase      = 'report';
+    SYSTEM_PROMPT = buildReportPrompt(appProfile);
+    updatePhaseBar();
+    setInputDisabled(true);
+    showTyping();
+    try { await callClaude('אנא כתוב את הסיכום המלא עם ההמלצות, הפערים ושאלות ההמשך.'); }
+    catch(e) { removeTyping(); addMessage('agent', `שגיאה: ${e.message}`); setInputDisabled(false); }
+    return;
+  }
+
+  if (reportReady) {
+    showReport();
+    appPhase      = 'free';
+    SYSTEM_PROMPT = buildFreeChatPrompt(appProfile);
+    updatePhaseBar();
+    document.getElementById('messages').style.display = '';
+    document.getElementById('input-bar').style.display = '';
+    document.getElementById('user-input').placeholder = S('freePH');
+    setInputDisabled(false);
+    return;
+  }
+
+  // ── Questions phase: after a topic is scored → show topic picker
+  if (appPhase === 'questions' && fullText.includes('##SCORE##') && !questionData) {
+    dbgOk('callClaude: נושא הושלם → topic picker');
+    showTopicPicker();
+    return;
+  }
+
+  if (questionData) {
+    dbgOk('showOptions: קורא עם אפשרויות', { count: (questionData.options||[]).length, options: questionData.options });
+    showOptions(questionData.options || []);
+  } else {
+    dbgInfo('callClaude: אין questionData → מפעיל input רגיל');
+    setInputDisabled(false);
+    document.getElementById('user-input').focus();
+  }
+}
+
+// ─── Options (multiple choice) ───────────────────────────────────────────────
+function showOptions(options) {
+  dbgInfo('showOptions: נכנס', { optionsCount: options.length });
+  removeOptions();
+  document.getElementById('input-bar').style.display = 'none';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'options-wrap';
+  wrap.id = 'options-wrap';
+
+  const isOther = opt => opt.startsWith('אחר');
+
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn' + (isOther(opt) ? ' other' : '');
+    btn.textContent = opt;
+
+    if (isOther(opt)) {
+      btn.onclick = () => {
+        removeOptions();
+        setInputDisabled(false);
+        document.getElementById('user-input').focus();
+      };
+    } else {
+      btn.onclick = () => {
+        btn.classList.toggle('selected');
+        confirmBtn.disabled = wrap.querySelectorAll('.option-btn.selected').length === 0;
+      };
+    }
+
+    wrap.appendChild(btn);
+  });
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.className = 'options-confirm';
+  confirmBtn.textContent = 'שלח תשובה';
+  confirmBtn.disabled = true;
+  confirmBtn.onclick = () => confirmSelection(wrap);
+  wrap.appendChild(confirmBtn);
+
+  const chatWrap = document.getElementById('chat-wrap');
+  const inputBar = document.getElementById('input-bar');
+  if (!chatWrap) { dbgErr('showOptions: chat-wrap לא נמצא!'); return; }
+  if (!inputBar) { dbgErr('showOptions: input-bar לא נמצא!'); return; }
+  chatWrap.insertBefore(wrap, inputBar);
+  document.getElementById('messages').scrollTop = 9999;
+  dbgOk('showOptions: נוסף ל-DOM', { wrapId: wrap.id, childrenCount: wrap.children.length });
+}
+
+function removeOptions() {
+  document.getElementById('options-wrap')?.remove();
+  removeTopicPicker();
+}
+
+async function confirmSelection(wrap) {
+  const selected = [...wrap.querySelectorAll('.option-btn.selected')]
+    .map(b => b.textContent.replace(/^✓\s*/, ''));
+  if (selected.length === 0) return;
+
+  const text = selected.join(', ');
+  removeOptions();
+  addMessage('user', text);
+  setInputDisabled(true);
+  showTyping();
+
+  try {
+    await callClaude(text);
+  } catch (e) {
+    removeTyping();
+    addMessage('agent', `שגיאה: ${e.message}`);
+    setInputDisabled(false);
+  }
+}
+
+// ─── Conversation init ────────────────────────────────────────────────────────
+async function initConversation() {
+  dbgInfo('initConversation: מתחיל', { mode: appMode, options: appOptions });
+  // Start at phase 1: profile agent
+  appPhase      = 'profile';
+  appProfile    = null;
+  SYSTEM_PROMPT = buildProfilePrompt();
+  updatePhaseBar();
+
+  setInputDisabled(true);
+  showTyping();
+  try {
+    await callClaude('התחל את השיחה בבקשה.');
+  } catch (e) {
+    messages = []; // reset so user can restart by changing the key
+    dbgErr('initConversation: שגיאה', { msg: e.message });
+    removeTyping();
+    addMessage('agent', `שגיאה: ${e.message}\n\nבדוק שה-API key תקין ויש לך חיבור לאינטרנט. לאחר תיקון המפתח, לחץ על 🔑 החלף מפתח ובחר שם משתמש מחדש.`);
+    setInputDisabled(false);
+  }
+}
+
+// ─── Send message ─────────────────────────────────────────────────────────────
+async function sendMessage() {
+  const input = document.getElementById('user-input');
+  const text  = input.value.trim();
+  if (!text || isLoading) return;
+
+  input.value = '';
+  autoResize(input);
+  addMessage('user', text);
+  setInputDisabled(true);
+  showTyping();
+
+  try {
+    await callClaude(text);
+    setInputDisabled(false);
+    input.focus();
+  } catch (e) {
+    removeTyping();
+    addMessage('agent', `שגיאה: ${e.message}\n\nבדוק שה-API key תקין ויש לך חיבור לאינטרנט.`);
+    setInputDisabled(false);
+  }
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function setInputDisabled(val) {
+  isLoading = val;
+  document.getElementById('user-input').disabled = val;
+  document.getElementById('send-btn').disabled   = val;
+}
+
+// ─── Final Report ─────────────────────────────────────────────────────────────
+function showReport() {
+  document.getElementById('messages').style.display  = 'none';
+  document.getElementById('input-bar').style.display = 'none';
+  const rv = document.getElementById('report-view');
+  rv.classList.add('visible');
+
+  const vals      = Object.values(scores);
+  const totalW    = vals.reduce((s, v) => s + v.weight, 0) || 1;
+  const n         = Math.max(appOptions.length, 2);
+  const optColors = ['var(--cyan)', 'var(--yellow)', 'var(--green)'];
+  const optFills  = ['a', 'b', 'c'];
+  const optLabels = ['א׳', 'ב׳', 'ג׳'];
+  const optNames  = ['א׳','ב׳','ג׳'].map((l,i) => appOptions[i] || `אפשרות ${l}`);
+
+  // Weighted total per option
+  const totals = OPT_KEYS.slice(0, n).map(k =>
+    vals.reduce((s, v) => s + (v[k] || 0) * v.weight, 0) / totalW * 10
+  );
+  const maxTotal = Math.max(...totals);
+  const winIdx   = totals.indexOf(maxTotal);
+  const runnerUp = Math.max(...totals.filter((_, i) => i !== winIdx));
+  const diff     = maxTotal - runnerUp;
+  const isTie    = diff < 0.5;
+
+  const verdictCls   = isTie ? 'tie' : `win-${optFills[winIdx]}`;
+  const verdictEmoji = isTie ? '⚖️' : '🏆';
+  const verdictTitle = isTie
+    ? 'הבדל קטן — ההחלטה תלויה בגורמים אישיים'
+    : `${optNames[winIdx]} מתאים יותר`;
+  const verdictSub = isTie
+    ? `הפרש של פחות מחצי נקודה בין האפשרויות`
+    : `ציון ${maxTotal.toFixed(1)} מול ${totals.filter((_,i)=>i!==winIdx).map(t=>t.toFixed(1)).join(' / ')}`;
+
+  // Total score bars
+  const totalBars = OPT_KEYS.slice(0, n).map((k, i) => `
+    <div class="rpt-total-row">
+      <span class="rpt-total-name" style="color:${optColors[i]}">${optLabels[i]} – ${optNames[i]}</span>
+      <div class="rpt-total-track">
+        <div class="rpt-total-fill ${k}" style="width:${totals[i]}%"></div>
+      </div>
+      <span class="rpt-total-val" style="color:${optColors[i]}">${totals[i].toFixed(1)}</span>
+    </div>`).join('');
+
+  // Per-topic score cards
+  const scoreCards = CATEGORIES.filter(c => scores[c]).map((cat, idx) => {
+    const s   = scores[cat];
+    const pct = Math.round((s.weight || 0) * 100);
+    const barRows = OPT_KEYS.slice(0, n).map((k, i) => {
+      const val = s[k] || 0;
+      return `
+        <div class="rpt-bar-row">
+          <span class="rpt-bar-lbl" style="color:${optColors[i]}">${optLabels[i]}</span>
+          <div class="rpt-bar-track">
+            <div class="rpt-bar-fill ${k}" style="width:${val*10}%;transition-delay:${idx*40}ms"></div>
+          </div>
+          <span class="rpt-bar-val" style="color:${optColors[i]}">${val}/10</span>
+        </div>`;
+    }).join('');
+    return `
+      <div class="rpt-score-card">
+        <div class="rpt-score-head">
+          <span class="rpt-score-name">${cat}</span>
+          <span class="rpt-score-weight">משקל ${pct}%</span>
+        </div>
+        ${barRows}
+        ${s.reason ? `<div class="rpt-reason">↳ ${s.reason}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  // Summary cards per option
+  const summaryCards = OPT_KEYS.slice(0, n)
+    .filter(k => reportData[`summary_${k}`])
+    .map((k, i) => `
+      <div class="rpt-summary-card s-${k}">
+        <div class="rpt-summary-tag">${optLabels[i]} – ${optNames[i]}</div>
+        <p>${reportData[`summary_${k}`]}</p>
+      </div>`).join('');
+
+  rv.innerHTML = `<div class="rpt">
+
+    <div class="rpt-verdict ${verdictCls}">
+      <div class="rpt-verdict-emoji">${verdictEmoji}</div>
+      <div class="rpt-verdict-title">${verdictTitle}</div>
+      <div class="rpt-verdict-sub">${verdictSub}</div>
+    </div>
+
+    <div class="rpt-section-label">ציון משוקלל כולל</div>
+    <div class="rpt-totals">${totalBars}</div>
+
+    ${summaryCards ? `
+    <div class="rpt-section-label">סיכום לפי אפשרות</div>
+    <div class="rpt-summaries">${summaryCards}</div>` : ''}
+
+    ${reportData.key_tension || reportData.recommendation_note ? `
+    <div class="rpt-section-label">ניתוח מעמיק</div>
+    <div class="rpt-info-cards">
+      ${reportData.key_tension ? `
+      <div class="rpt-info-card tension">
+        <div class="rpt-info-title">⚡ הדילמה המרכזית</div>
+        <p>${reportData.key_tension}</p>
+      </div>` : ''}
+      ${reportData.recommendation_note ? `
+      <div class="rpt-info-card advice">
+        <div class="rpt-info-title">💡 המלצת היועץ</div>
+        <p>${reportData.recommendation_note}</p>
+      </div>` : ''}
+    </div>` : ''}
+
+    <div class="rpt-section-label">ציונים לפי תחום — ${Object.keys(scores).length} תחומים</div>
+    <div class="rpt-scores">${scoreCards}</div>
+
+    <div class="rpt-actions">
+      <button class="rpt-btn-restart" onclick="restartConversation()">🔄 שיחה חדשה</button>
+      <button class="rpt-btn-chat" onclick="scrollToChat()">💬 שאל שאלה נוספת</button>
+    </div>
+  </div>`;
+}
+
+function scrollToChat() {
+  document.getElementById('report-view').classList.remove('visible');
+  document.getElementById('messages').style.display = '';
+  document.getElementById('input-bar').style.display = '';
+  document.getElementById('user-input').focus();
+  document.getElementById('messages').scrollTop = 9999;
+}
+
+function restartConversation() {
+  messages   = [];
+  scores     = {};
+  reportData = {};
+  appMode       = null;
+  appOptions    = [];
+  appDepth      = 'full';
+  appWeightsMap = {};
+  appPhase      = 'profile';
+  appProfile    = null;
+  SYSTEM_PROMPT = '';
+  document.getElementById('phase-bar').style.display = 'none';
+  document.getElementById('user-input').placeholder  = 'כתוב את תשובתך כאן...';
+  // Reset CATEGORIES to base list (remove any custom topics added last session)
+  CATEGORIES.splice(0, CATEGORIES.length,
+    'איכות חיים','קהילה','חינוך','נגישות לעבודה','כלכלי',
+    'בטחון אישי','תרבות ופנאי','בריאות','קרבה למשפחה וחברים');
+  buildTopicsSidebar();
+  document.getElementById('total-a').textContent     = '—';
+  document.getElementById('total-b').textContent     = '—';
+  document.getElementById('total-bar-a').style.width = '0';
+  document.getElementById('total-bar-b').style.width = '0';
+  document.getElementById('report-view').classList.remove('visible');
+  document.getElementById('report-view').innerHTML   = '';
+  document.getElementById('messages').style.display  = '';
+  document.getElementById('input-bar').style.display = '';
+  document.getElementById('messages').innerHTML      = '';
+  // Delete old session data for this user so they start clean
+  if (currentUsername) deleteSession(currentUsername);
+  showWelcome();
+}
+</script>
+</body>
+</html>
