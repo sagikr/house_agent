@@ -2609,7 +2609,7 @@ async function callClaude(userMessage) {
 function showOptions(options) {
   dbgInfo('showOptions: נכנס', { optionsCount: options.length });
   removeOptions();
-  document.getElementById('input-bar').style.display = 'none';
+  // Keep input-bar visible so user can always type or press Enter
 
   const wrap = document.createElement('div');
   wrap.className = 'options-wrap';
@@ -2631,7 +2631,7 @@ function showOptions(options) {
     } else {
       btn.onclick = () => {
         btn.classList.toggle('selected');
-        confirmBtn.disabled = wrap.querySelectorAll('.option-btn.selected').length === 0;
+        // confirm button is always enabled — no need to update
       };
     }
 
@@ -2640,8 +2640,8 @@ function showOptions(options) {
 
   const confirmBtn = document.createElement('button');
   confirmBtn.className = 'options-confirm';
-  confirmBtn.textContent = 'שלח תשובה';
-  confirmBtn.disabled = true;
+  confirmBtn.textContent = 'שלח תשובה ↵';
+  confirmBtn.disabled = false;
   confirmBtn.onclick = () => confirmSelection(wrap);
   wrap.appendChild(confirmBtn);
 
@@ -2662,9 +2662,14 @@ function removeOptions() {
 async function confirmSelection(wrap) {
   const selected = [...wrap.querySelectorAll('.option-btn.selected')]
     .map(b => b.textContent.replace(/^✓\s*/, ''));
-  if (selected.length === 0) return;
 
-  const text = selected.join(', ');
+  // Fall back to typed text if nothing selected
+  const typedInput = document.getElementById('user-input');
+  const typed = typedInput ? typedInput.value.trim() : '';
+  if (selected.length === 0 && !typed) return;
+
+  const text = selected.length > 0 ? selected.join(', ') : typed;
+  if (typedInput) typedInput.value = '';
   removeOptions();
   addMessage('user', text);
   setInputDisabled(true);
