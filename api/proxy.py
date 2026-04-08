@@ -11,7 +11,7 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         try:
-            api_key = os.environ.get('ANTHROPIC_KEY', '')
+            api_key = os.environ.get('ANTHROPIC_KEY', '').strip()
             if not api_key:
                 self._error(500, 'ANTHROPIC_KEY is not configured in Vercel environment variables')
                 return
