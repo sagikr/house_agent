@@ -713,6 +713,63 @@
     text-align: center; letter-spacing: 0.3px;
   }
 
+  /* ── QUESTIONS PROGRESS BAR ── */
+  #questions-progress-bar {
+    display: none;
+    padding: 6px 16px 8px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .qpb-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.72rem;
+    color: var(--text2);
+    margin-bottom: 5px;
+  }
+  .qpb-label { font-weight: 600; }
+  .qpb-count { color: var(--accent); font-weight: 700; }
+  .qpb-track {
+    height: 6px;
+    background: var(--bg3);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .qpb-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--cyan));
+    transition: width .6s ease;
+  }
+
+  /* Sidebar progress */
+  #sb-questions-progress {
+    display: none;
+    margin-top: 10px;
+  }
+  .sb-qpb-label {
+    font-size: 0.7rem;
+    color: var(--text2);
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+  .sb-qpb-count { color: var(--accent); font-weight: 700; }
+  .sb-qpb-track {
+    height: 8px;
+    background: var(--bg);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .sb-qpb-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--cyan));
+    transition: width .6s ease;
+  }
+
   /* ── TOPIC PICKER ── */
   .topic-picker-wrap {
     padding: 8px 24px 16px;
@@ -842,6 +899,13 @@
   <!-- Chat -->
   <div id="chat-wrap">
     <div id="phase-bar" style="display:none"></div>
+    <div id="questions-progress-bar">
+      <div class="qpb-top">
+        <span class="qpb-label">התקדמות שאלות</span>
+        <span class="qpb-count" id="qpb-count">0/0</span>
+      </div>
+      <div class="qpb-track"><div class="qpb-fill" id="qpb-fill" style="width:0%"></div></div>
+    </div>
     <div id="messages"></div>
     <div id="report-view"></div>
     <div id="input-bar">
@@ -876,6 +940,13 @@
     </div>
 
     <div>
+      <div id="sb-questions-progress">
+        <div class="sb-qpb-label">
+          <span>התקדמות נושאים</span>
+          <span class="sb-qpb-count" id="sb-qpb-count">0/0</span>
+        </div>
+        <div class="sb-qpb-track"><div class="sb-qpb-fill" id="sb-qpb-fill" style="width:0%"></div></div>
+      </div>
       <div class="sidebar-title" id="sb-score-title">ניקוד כולל</div>
       <div class="total-box" id="total-box">
         <div class="total-row">
@@ -1476,6 +1547,7 @@ function resumeSession() {
 
   // Restore scores to sidebar
   Object.entries(scores).forEach(([cat, s]) => updateSidebarScore(cat, s.a, s.b, s.c));
+  updateQuestionsProgress();
 
   // Restore chat messages (strip internal markers from display)
   document.getElementById('messages').innerHTML = '';
@@ -1801,6 +1873,33 @@ function setActiveTopic(cat) {
   if (el && !el.classList.contains('done')) el.classList.add('active');
 }
 
+function updateQuestionsProgress() {
+  const total = Object.keys(appWeightsMap).length || CATEGORIES.length;
+  const done  = Object.keys(scores).length;
+  const pct   = total ? (done / total * 100) : 0;
+  const label = `${done}/${total}`;
+
+  // Chat bar
+  const bar = document.getElementById('questions-progress-bar');
+  if (bar) {
+    bar.style.display = appPhase === 'questions' ? '' : 'none';
+    const fill  = document.getElementById('qpb-fill');
+    const count = document.getElementById('qpb-count');
+    if (fill)  fill.style.width = pct + '%';
+    if (count) count.textContent = label;
+  }
+
+  // Sidebar bar
+  const sbBar = document.getElementById('sb-questions-progress');
+  if (sbBar) {
+    sbBar.style.display = appPhase === 'questions' ? '' : 'none';
+    const fill  = document.getElementById('sb-qpb-fill');
+    const count = document.getElementById('sb-qpb-count');
+    if (fill)  fill.style.width = pct + '%';
+    if (count) count.textContent = label;
+  }
+}
+
 function updateTotalScore() {
   const vals = Object.values(scores);
   if (!vals.length) return;
@@ -2070,6 +2169,7 @@ function parseMarkers(text) {
         };
         if (!CATEGORIES.includes(cat)) CATEGORIES.push(cat);
         updateSidebarScore(cat, scores[cat].a, scores[cat].b, scores[cat].c);
+        updateQuestionsProgress();
       }
     } catch {}
   }
@@ -2178,6 +2278,7 @@ async function callClaude(userMessage) {
       SYSTEM_PROMPT = buildQuestionsPrompt(appProfile);
       updatePhaseBar();
       buildTopicsSidebar(); // enable clickable topics
+      updateQuestionsProgress();
       document.getElementById('user-input').placeholder = S('inputPH');
       setInputDisabled(false);
       document.getElementById('user-input').focus();
@@ -2192,6 +2293,7 @@ async function callClaude(userMessage) {
       SYSTEM_PROMPT = buildQuestionsPrompt(appProfile);
       updatePhaseBar();
       buildTopicsSidebar(); // enable clickable topics
+      updateQuestionsProgress();
       document.getElementById('user-input').placeholder = S('inputPH');
       setInputDisabled(false);
       document.getElementById('user-input').focus();
