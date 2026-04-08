@@ -878,7 +878,7 @@
   <div style="display:flex;align-items:center;gap:8px">
     <span id="user-badge" class="user-badge" onclick="showUsernameScreen()" style="display:none"></span>
     <button id="lang-btn" onclick="toggleLang()" title="Switch language">EN</button>
-    <button id="api-key-btn" onclick="showApiKeyModal()">🔑 החלף מפתח</button>
+    <button id="api-key-btn" onclick="showApiKeyModal()" style="display:none">🔑 החלף מפתח</button>
   </div>
 </header>
 
@@ -974,7 +974,8 @@
 
 <script>
 // ─── Constants ────────────────────────────────────────────────────────────────
-const API_URL    = '/api/proxy';
+const API_URL     = '/api/proxy';
+const USING_PROXY = API_URL.startsWith('/');
 const MODEL      = 'claude-opus-4-6';
 
 // ─── Debug ────────────────────────────────────────────────────────────────────
@@ -1397,6 +1398,7 @@ function saveEditedProfile() {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 buildTopicsSidebar();
 showLandingPage();
+if (!USING_PROXY) document.getElementById('api-key-btn').style.display = '';
 
 // ─── API Key Modal ────────────────────────────────────────────────────────────
 function showApiKeyModal() {
@@ -2126,7 +2128,7 @@ function showLandingPage() {
 }
 
 function onLandingStart() {
-  if (!apiKey) showApiKeyModal();
+  if (!USING_PROXY && !apiKey) showApiKeyModal();
   else showUsernameScreen();
 }
 
@@ -2207,7 +2209,7 @@ async function callClaude(userMessage) {
   const response = await fetch(API_URL, {
     method: 'POST',
     headers: {
-      'x-api-key': apiKey,
+      ...(!USING_PROXY && { 'x-api-key': apiKey }),
       'anthropic-version': '2023-06-01',
       'content-type': 'application/json',
     },
